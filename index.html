@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calculateur Dôme Géodésique</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <nav class="menu-horizontal">
+        <button>Projet</button>
+        <button>Géométrie</button>
+        <button>Matériaux</button>
+        <button>Calculs</button>
+        <button>Export</button>
+        <button>Aide</button>
+    </nav>
+
+    <main class="container">
+        <section class="config">
+            <h3>Paramètres du Polyèdre</h3>
+            <label>Fréquence V :</label>
+            <select id="frequence">
+                <option value="1">1V</option>
+                <option value="2">2V</option>
+                <option value="3" selected>3V</option>
+            </select>
+            
+            <label>Rayon (m) :</label>
+            <input type="number" id="rayon" value="3" step="0.1">
+        </section>
+
+        <section class="visualisation">
+            <canvas id="domeCanvas"></canvas>
+        </section>
+    </main>
+
+    <script src="script.js"></script>
+</body>
+</html>

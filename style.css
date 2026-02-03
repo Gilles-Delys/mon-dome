@@ -1,0 +1,14 @@
+.menu-horizontal {
+    display: flex;
+    flex-wrap: wrap; /* Les boutons passent à la ligne sur petit écran */
+    justify-content: space-around;
+    background: #333;
+    padding: 10px;
+}
+
+@media (max-width: 600px) {
+    .menu-horizontal button {
+        width: 48%; /* 2 boutons par ligne sur mobile */
+        margin-bottom: 5px;
+    }
+}
