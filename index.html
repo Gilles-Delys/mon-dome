@@ -3,66 +3,71 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dôme Géodésique Pro</title>
+    <title>Dôme Géodésique Pro - Calculateur</title>
     <link rel="stylesheet" href="style.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
 </head>
 <body>
 
 <header>
     <nav class="menu-horizontal">
-        <button onclick="showTab('config')">Configuration</button>
+        <button onclick="showTab('config')">Géométrie</button>
         <button onclick="showTab('materiaux')">Matériaux</button>
-        <button onclick="showTab('schema')">Schéma & Découpe</button>
-        <button onclick="showTab('trent')">Vue 3D (Trent)</button>
-        <button onclick="showTab('export')">Export CSV</button>
+        <button onclick="showTab('schema')">Schéma</button>
+        <button onclick="showTab('trent')">Trent (3D)</button>
+        <button onclick="showTab('export')">Export</button>
         <button onclick="showTab('aide')">Aide</button>
     </nav>
 </header>
 
-<main class="container">
+<div class="container">
     <section id="config" class="tab-content active">
-        <h2>Paramètres Géométriques</h2>
-        <div class="grid-params">
-            <label>Polyèdre:</label>
-            <select id="poly">
-                <option value="icosahedron">Icosaèdre</option>
-            </select>
-
-            <label>Fréquence (V):</label>
+        <h2>Paramètres de Subdivision</h2>
+        <div class="input-group">
+            <label>Polyèdre :</label>
+            <select id="poly"><option value="icosahedron">Icosaèdre</option></select>
+            <label>Fréquence V :</label>
             <input type="number" id="freqV" value="3" min="1" max="6">
-
-            <label>Méthode:</label>
-            <select id="methode">
-                <option value="kruschke">Kruschke</option>
-            </select>
+            <label>Méthode :</label>
+            <select id="methode"><option value="kruschke">Kruschke</option></select>
         </div>
-        <button class="btn-calcul" onclick="lancerCalculs()">Lancer les Calculs</button>
+        <button class="btn-main" onclick="lancerCalculs()">VALIDER ET CALCULER</button>
     </section>
 
     <section id="materiaux" class="tab-content">
-        <h2>Caractéristiques Matériel</h2>
-        <div class="grid-params">
-            <label>Rayon sphère (m):</label>
+        <h2>Caractéristiques du Matériel</h2>
+        <div class="input-group">
+            <label>Rayon sphère (m) :</label>
             <input type="number" id="rayon" value="3.0" step="0.1">
-            <label>Largeur montant (mm):</label>
+            <label>Largeur montant (mm) :</label>
             <input type="number" id="largeur" value="50">
-            <label>Épaisseur (mm):</label>
+            <label>Épaisseur (mm) :</label>
             <input type="number" id="epaisseur" value="25">
         </div>
     </section>
 
     <section id="schema" class="tab-content">
-        <h2>Détails de Découpe</h2>
-        <div id="resultatsCalculs">
-            <p>Lancez le calcul pour voir les segments...</p>
-        </div>
+        <h2>Tableau des Découpes</h2>
+        
+        <div id="table-results"></div>
     </section>
 
     <section id="trent" class="tab-content">
-        <div id="container3d"></div>
+        <div id="renderer-container"></div>
     </section>
-</main>
+
+    <section id="export" class="tab-content">
+        <h2>Exportation des Données</h2>
+        <p>Téléchargez les résultats pour votre atelier de découpe (Format CSV).</p>
+        <button class="btn-main" style="background:#2980b9" onclick="exporterCSV()">TÉLÉCHARGER LE FICHIER .CSV</button>
+    </section>
+
+    <section id="aide" class="tab-content">
+        <h2>Aide & Instructions</h2>
+        <p>1. Réglez la géométrie. 2. Validez. 3. Vérifiez les montants dans "Schéma". 4. Visualisez en 3D dans "Trent".</p>
+    </section>
+</div>
 
 <script src="logic.js"></script>
 <script src="render3d.js"></script>
