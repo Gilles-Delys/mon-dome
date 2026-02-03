@@ -3,39 +3,68 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Calculateur Dôme Géodésique</title>
+    <title>Dôme Géodésique Pro</title>
     <link rel="stylesheet" href="style.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 </head>
 <body>
 
+<header>
     <nav class="menu-horizontal">
-        <button>Projet</button>
-        <button>Géométrie</button>
-        <button>Matériaux</button>
-        <button>Calculs</button>
-        <button>Export</button>
-        <button>Aide</button>
+        <button onclick="showTab('config')">Configuration</button>
+        <button onclick="showTab('materiaux')">Matériaux</button>
+        <button onclick="showTab('schema')">Schéma & Découpe</button>
+        <button onclick="showTab('trent')">Vue 3D (Trent)</button>
+        <button onclick="showTab('export')">Export CSV</button>
+        <button onclick="showTab('aide')">Aide</button>
     </nav>
+</header>
 
-    <main class="container">
-        <section class="config">
-            <h3>Paramètres du Polyèdre</h3>
-            <label>Fréquence V :</label>
-            <select id="frequence">
-                <option value="1">1V</option>
-                <option value="2">2V</option>
-                <option value="3" selected>3V</option>
+<main class="container">
+    <section id="config" class="tab-content active">
+        <h2>Paramètres Géométriques</h2>
+        <div class="grid-params">
+            <label>Polyèdre:</label>
+            <select id="poly">
+                <option value="icosahedron">Icosaèdre</option>
             </select>
-            
-            <label>Rayon (m) :</label>
-            <input type="number" id="rayon" value="3" step="0.1">
-        </section>
 
-        <section class="visualisation">
-            <canvas id="domeCanvas"></canvas>
-        </section>
-    </main>
+            <label>Fréquence (V):</label>
+            <input type="number" id="freqV" value="3" min="1" max="6">
 
-    <script src="script.js"></script>
+            <label>Méthode:</label>
+            <select id="methode">
+                <option value="kruschke">Kruschke</option>
+            </select>
+        </div>
+        <button class="btn-calcul" onclick="lancerCalculs()">Lancer les Calculs</button>
+    </section>
+
+    <section id="materiaux" class="tab-content">
+        <h2>Caractéristiques Matériel</h2>
+        <div class="grid-params">
+            <label>Rayon sphère (m):</label>
+            <input type="number" id="rayon" value="3.0" step="0.1">
+            <label>Largeur montant (mm):</label>
+            <input type="number" id="largeur" value="50">
+            <label>Épaisseur (mm):</label>
+            <input type="number" id="epaisseur" value="25">
+        </div>
+    </section>
+
+    <section id="schema" class="tab-content">
+        <h2>Détails de Découpe</h2>
+        <div id="resultatsCalculs">
+            <p>Lancez le calcul pour voir les segments...</p>
+        </div>
+    </section>
+
+    <section id="trent" class="tab-content">
+        <div id="container3d"></div>
+    </section>
+</main>
+
+<script src="logic.js"></script>
+<script src="render3d.js"></script>
 </body>
 </html>
