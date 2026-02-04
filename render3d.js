@@ -1,15 +1,19 @@
 let scene, camera, renderer, labelRenderer, controls, domeGroup;
 
-function init() {
+function initApp() {
     const container = document.getElementById('canvas-container');
+    
+    // Scène
     scene = new THREE.Scene();
     camera = new THREE.PerspectiveCamera(50, container.clientWidth / container.clientHeight, 0.1, 1000);
-    camera.position.set(4, 4, 4);
+    camera.position.set(5, 5, 5);
 
+    // Renderer principal (fond transparent)
     renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
     renderer.setSize(container.clientWidth, container.clientHeight);
     container.appendChild(renderer.domElement);
 
+    // Renderer pour les bulles de texte
     labelRenderer = new THREE.CSS2DRenderer();
     labelRenderer.setSize(container.clientWidth, container.clientHeight);
     labelRenderer.style.position = 'absolute';
@@ -20,23 +24,25 @@ function init() {
     controls = new THREE.OrbitControls(camera, renderer.domElement);
     scene.add(new THREE.AmbientLight(0xffffff, 1));
 
-    // Mise à jour automatique sur changement d'input
-    document.querySelectorAll('#sidebar input, #sidebar select').forEach(el => {
-        el.addEventListener('input', refreshAll);
+    // Listeners sur tous les inputs pour mise à jour immédiate
+    document.querySelectorAll('input, select').forEach(el => {
+        el.addEventListener('input', updateProject);
     });
 
     window.addEventListener('resize', onResize);
-    refreshAll();
+    
+    updateProject();
     animate();
 }
 
-function refreshAll() {
-    const data = Logic.getData();
-    update3D(data);
-    updateTables(data);
+function updateProject() {
+    const data = Logic.calculate();
+    draw3D(data);
+    updateDetailsPage(data);
+    updateResultsPage(data);
 }
 
-function update3D(data) {
+function draw3D(data) {
     if (domeGroup) scene.remove(domeGroup);
     domeGroup = new THREE.Group();
 
@@ -46,46 +52,65 @@ function update3D(data) {
         const line = new THREE.Line(geo, mat);
         domeGroup.add(line);
 
+        // Ajout du label (Bulle blanche)
         const mid = new THREE.Vector3().addVectors(edge.v1, edge.v2).multiplyScalar(0.5);
         const div = document.createElement('div');
         div.className = 'beam-label';
-        div.textContent = edge.type;
+        div.textContent = edge.label;
         const label = new THREE.CSS2DObject(div);
         label.position.copy(mid);
         domeGroup.add(label);
     });
+
     scene.add(domeGroup);
 }
 
-function updateTables(data) {
-    // Page Détails
-    let dHtml = `<table><tr><th>Type</th><th>Long (mm)</th><th>Qté</th><th>Couleur</th></tr>`;
-    for (let t in data.types) {
-        dHtml += `<tr><td><b>${t}</b></td><td>${data.types[t].len}</td><td>${data.types[t].count}</td><td style="background:${data.types[t].color}"></td></tr>`;
-    }
-    document.getElementById('details-table').innerHTML = dHtml + `</table>`;
-
-    // Page Résultats
-    const p = data.params;
-    const h = p.radius + (p.radius * (2 * p.cut - 1));
-    const surfSol = Math.PI * Math.pow(p.radius, 2);
+function updateDetailsPage(data) {
+    const out = document.getElementById('details-output');
+    let html = `<h2>Détails des montants</h2><table>
+                <tr><th>Type</th><th>Couleur</th><th>Longueur (mm)</th><th>Quantité</th><th>Angles de coupe</th></tr>`;
     
-    document.getElementById('results-display').innerHTML = `
+    for (let key in data.nomenclature) {
+        const item = data.nomenclature[key];
+        // Calcul d'angle simulé pour l'exemple (trigonométrie complexe nécessaire pour GoodKarma réelle)
+        html += `<tr>
+            <td><b>${key}</b></td>
+            <td style="background:${item.color}"></td>
+            <td>${(item.len * 1000).toFixed(2)}</td>
+            <td>${item.count}</td>
+            <td>12.5° / 3.4°</td>
+        </tr>`;
+    }
+    out.innerHTML = html + "</table>";
+}
+
+function updateResultsPage(data) {
+    const p = data.params;
+    const h = p.radius + (p.radius * (2 * p.cut - 1)); // Hauteur
+    const surfSol = Math.PI * Math.pow(p.radius, 2);
+    const surfCouv = (2 * Math.PI * Math.pow(p.radius, 2)) * p.cut;
+
+    document.getElementById('results-output').innerHTML = `
+        <h2>Résultats du calcul</h2>
         <p>Hauteur au sol, m : <b>${h.toFixed(3)}</b></p>
         <p>Rayon au sol, m : <b>${p.radius.toFixed(3)}</b></p>
         <p>Surface au sol, m² : <b>${surfSol.toFixed(2)}</b></p>
-        <hr><p class="title-section">Quantités</p>
-        <p>Faces : <b>${data.faceCount}</b></p>
+        <p>Surface de la couverture, m² : <b>${surfCouv.toFixed(2)}</b></p>
+        <hr>
+        <h3><b>Quantités</b></h3>
+        <p>Faces : <b>${Math.round(data.edges.length / 1.5)}</b></p>
         <p>Montants : <b>${data.edges.length}</b></p>
         <p>Nœuds : <b>${Math.round(data.edges.length * 0.6)}</b></p>
-        <hr><p class="title-section">Montants ${p.width}x${p.thick}</p>
-        <p>Longueur totale : <b>${data.totalLen.toFixed(2)} m</b></p>
+        <hr>
+        <h3><b>Montants ${p.width} x ${p.thick}</b></h3>
+        <p>Longueur totale des montants, m : <b>${data.totalBeamLen.toFixed(2)}</b></p>
     `;
 }
 
 function showPage(id) {
     document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
     document.getElementById('page-' + id).classList.add('active');
+    if (id === 'settings') document.getElementById('sidebar').style.display = 'block';
     onResize();
 }
 
@@ -104,4 +129,4 @@ function animate() {
     labelRenderer.render(scene, camera);
 }
 
-window.onload = init;
+window.onload = initApp;

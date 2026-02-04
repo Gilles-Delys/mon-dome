@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Calculateur de Dôme Géodésique</title>
+    <title>Calculateur de Dôme Géodésique Pro</title>
     <link rel="stylesheet" href="style.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
@@ -11,60 +11,84 @@
 </head>
 <body>
     <nav id="top-menu">
-        <button onclick="showPage('settings')">Paramètres</button>
-        <button onclick="showPage('schema')">Schéma</button>
-        <button onclick="showPage('details')">Détails</button>
-        <button onclick="showPage('results')">Résultats</button>
-        <button id="export-btn" onclick="exportCSV()">Export</button>
+        <div class="nav-container">
+            <button onclick="showPage('settings')">Paramètres</button>
+            <button onclick="showPage('schema')">Schéma</button>
+            <button onclick="showPage('details')">Détails</button>
+            <button onclick="showPage('results')">Résultats</button>
+            <button id="export-btn" onclick="exportCSV()">Export</button>
+        </div>
     </nav>
 
     <div class="main-container">
         <aside id="sidebar">
-            <h3 class="title-section">Paramètres de la forme</h3>
-            <label>Polyèdre</label>
-            <select id="polyhedron">
-                <option value="icosahedron" selected>Icosaèdre</option>
-                <option value="octahedron">Octaèdre</option>
-            </select>
-            <label>Fréquence, V</label>
-            <input type="number" id="frequency" value="3" min="1" max="6">
-            <label>Méthode de subdivision</label>
-            <select id="subdivision">
-                <option value="kruschte">Kruschte</option>
-                <option value="equal">Cordes égales</option>
-            </select>
-            <label>Découpage de la sphère</label>
-            <select id="sphere-cut">
-                <option value="0.25">1/4</option>
-                <option value="0.416">5/12</option>
-                <option value="0.5">1/2</option>
-                <option value="0.583">7/12</option>
-                <option value="0.75" selected>3/4</option>
-                <option value="1">1/1</option>
-            </select>
+            <div class="sidebar-content">
+                <h3 class="title-section"><u><b>Paramètres de la forme</b></u></h3>
+                <label>Polyèdre</label>
+                <select id="polyhedron">
+                    <option value="icosahedron">Icosaèdre</option>
+                    <option value="octahedron">Octaèdre</option>
+                </select>
 
-            <h3 class="title-section">Caractéristiques du matériel</h3>
-            <label>Rayon de la sphère, m</label>
-            <input type="number" id="radius" value="2.0" step="0.01">
-            <label>Type de connecteur</label>
-            <select id="connector">
-                <option value="goodkarma">GoodKarma</option>
-                <option value="piped">Piped</option>
-                <option value="cone">Cone</option>
-                <option value="joint">Joint</option>
-            </select>
+                <label>Fréquence, V</label>
+                <select id="frequency">
+                    <option value="1">1</option>
+                    <option value="2">2</option>
+                    <option value="3" selected>3</option>
+                    <option value="4">4</option>
+                    <option value="5">5</option>
+                    <option value="6">6</option>
+                </select>
 
-            <h3 class="title-section">Taille des montants</h3>
-            <label>Largeur, mm</label>
-            <input type="number" id="beam-width" value="120">
-            <label>Épaisseur, mm</label>
-            <input type="number" id="beam-thickness" value="40">
+                <label>Méthode de subdivision</label>
+                <select id="subdivision">
+                    <option value="kruschte">Kruschte</option>
+                    <option value="equal">Cordes égales</option>
+                </select>
+
+                <label>Découpage de la sphère</label>
+                <select id="sphere-cut">
+                    <option value="0.25">1/4</option>
+                    <option value="0.416">5/12</option>
+                    <option value="0.583">7/12</option>
+                    <option value="0.75" selected>3/4</option>
+                    <option value="1">1/1</option>
+                </select>
+
+                <h3 class="title-section"><u><b>Caractéristiques du matériel</b></u></h3>
+                <label>Rayon de la sphère, m</label>
+                <input type="number" id="radius" value="2.20" step="0.01">
+
+                <label>Type de connecteur</label>
+                <select id="connector">
+                    <option value="goodkarma">GoodKarma</option>
+                    <option value="piped">Piped</option>
+                    <option value="cone">Cone</option>
+                    <option value="joint">Joint</option>
+                </select>
+
+                <h3 class="title-section"><u><b>Taille des montants</b></u></h3>
+                <label>Largeur, mm</label>
+                <input type="number" id="beam-width" value="120">
+                <label>Epaisseur, mm</label>
+                <input type="number" id="beam-thickness" value="40">
+            </div>
         </aside>
 
         <main id="content">
-            <div id="page-schema" class="page active"><div id="canvas-container"></div></div>
-            <div id="page-details" class="page"><div class="page-inner"><h2>Détails des montants</h2><div id="details-table"></div></div></div>
-            <div id="page-results" class="page"><div class="page-inner"><h2>Résultats complets</h2><div id="results-display"></div></div></div>
+            <div id="page-schema" class="page active">
+                <div id="canvas-container"></div>
+            </div>
+            <div id="page-details" class="page">
+                <div class="page-inner">
+                    <div id="details-output"></div>
+                </div>
+            </div>
+            <div id="page-results" class="page">
+                <div class="page-inner">
+                    <div id="results-output"></div>
+                </div>
+            </div>
         </main>
     </div>
 

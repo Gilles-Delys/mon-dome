@@ -1,52 +1,97 @@
-:root { --primary: #2c3e50; --accent: #2980b9; --bg: #f8f9fa; --white: #ffffff; }
+:root {
+    --primary: #2c3e50;
+    --accent: #3498db;
+    --bg-light: #f4f7f6;
+    --sidebar-width: 280px;
+}
 
 * { box-sizing: border-box; }
-body, html { margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; height: 100vh; overflow: hidden; background: var(--bg); }
+body, html { margin: 0; padding: 0; font-family: 'Segoe UI', Arial, sans-serif; height: 100vh; overflow: hidden; background: var(--bg-light); }
 
+/* Menu Horizontal */
 #top-menu {
-    height: 50px; background: var(--primary);
-    display: flex; align-items: center; padding: 0 15px; gap: 10px;
+    height: 60px;
+    background: var(--primary);
+    display: flex;
+    align-items: center;
+    padding: 0 20px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    z-index: 100;
 }
+
+.nav-container { display: flex; gap: 10px; width: 100%; }
 
 #top-menu button {
-    background: #34495e; color: white; border: none; padding: 8px 15px;
-    cursor: pointer; border-radius: 4px; font-weight: 600; font-size: 0.85rem;
+    background: rgba(255,255,255,0.1);
+    border: 1px solid rgba(255,255,255,0.2);
+    color: white;
+    padding: 10px 20px;
+    cursor: pointer;
+    border-radius: 4px;
+    font-weight: 500;
+    transition: 0.3s;
 }
 
-#top-menu button:hover { background: var(--accent); }
+#top-menu button:hover { background: var(--accent); border-color: var(--accent); }
 
-.main-container { display: flex; height: calc(100vh - 50px); }
+/* Layout */
+.main-container { display: flex; height: calc(100vh - 60px); }
 
 #sidebar {
-    width: 280px; background: var(--white); border-right: 1px solid #ddd;
-    padding: 20px; overflow-y: auto; flex-shrink: 0;
+    width: var(--sidebar-width);
+    background: white;
+    border-right: 1px solid #ddd;
+    overflow-y: auto;
+    transition: 0.3s;
 }
 
-.title-section {
-    font-size: 0.8rem; font-weight: bold; text-decoration: underline;
-    text-transform: uppercase; margin: 20px 0 10px; color: var(--primary);
+.sidebar-content { padding: 20px; }
+
+.title-section { font-size: 0.85rem; margin: 20px 0 10px 0; color: var(--primary); }
+
+label { display: block; font-size: 0.8rem; margin-top: 15px; font-weight: bold; color: #555; }
+
+input, select {
+    width: 100%;
+    padding: 8px;
+    margin-top: 5px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    background: #fff;
 }
 
-label { display: block; font-size: 0.75rem; margin-top: 12px; font-weight: 700; color: #555; }
-input, select { width: 100%; padding: 8px; margin-top: 5px; border: 1px solid #ccc; border-radius: 4px; }
-
+/* Zone Contenu */
 #content { flex-grow: 1; position: relative; }
-.page { display: none; height: 100%; width: 100%; overflow-y: auto; }
+
+.page { display: none; height: 100%; width: 100%; overflow-y: auto; background: white; }
 .page.active { display: block; }
-.page-inner { padding: 30px; }
+#page-schema { background: transparent; }
+
+.page-inner { padding: 40px; max-width: 1000px; margin: 0 auto; }
 
 #canvas-container { width: 100%; height: 100%; }
 
+/* Bulles labels 3D */
 .beam-label {
-    background: white; border: 1.5px solid #333; border-radius: 50%;
-    width: 22px; height: 22px; display: flex; align-items: center;
-    justify-content: center; font-size: 11px; font-weight: bold;
+    background: white;
+    border: 1px solid #333;
+    border-radius: 50%;
+    width: 22px;
+    height: 22px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    font-weight: bold;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
 }
 
-table { width: 100%; border-collapse: collapse; background: white; margin-top: 15px; }
-th, td { border: 1px solid #ddd; padding: 12px; text-align: center; }
-th { background: #f2f2f2; font-weight: bold; }
+/* Tableaux et résultats */
+table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
+th { background: #f8f9fa; }
 
+/* Responsive */
 @media (max-width: 768px) {
     .main-container { flex-direction: column; }
     #sidebar { width: 100%; height: auto; border-right: none; border-bottom: 1px solid #ddd; }
