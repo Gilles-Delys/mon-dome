@@ -3,79 +3,92 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dôme Géodésique Pro - 7/12 Edition</title>
+    <title>Géodésique Pro - Calculateur de Dôme</title>
     <link rel="stylesheet" href="style.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
 </head>
 <body>
 
-<header>
-    <nav class="menu-horizontal">
-        <button onclick="showTab('config')">Géométrie</button>
-        <button onclick="showTab('materiaux')">Matériaux</button>
-        <button onclick="showTab('schema')">Schéma</button>
-        <button onclick="showTab('trent')">Trent (3D)</button>
-        <button onclick="showTab('export')">Export</button>
-        <button onclick="showTab('aide')">Aide</button>
+    <nav id="top-menu">
+        <button onclick="showPage('settings')">Paramètres</button>
+        <button onclick="showPage('schema')">Schéma</button>
+        <button onclick="showPage('details')">Détails</button>
+        <button onclick="showPage('results')">Résultats</button>
+        <button onclick="exportCSV()">Export</button>
     </nav>
-</header>
 
-<div class="container">
-    <section id="config" class="tab-content active">
-        <h2>Paramètres de Subdivision</h2>
-        <div class="input-group">
-            <label>Polyèdre :</label>
-            <select id="poly"><option value="icosahedron">Icosaèdre</option></select>
-            <label>Fréquence V :</label>
-            <input type="number" id="freqV" value="3" min="1" max="6">
-            <label>Méthode :</label>
-            <select id="methode"><option value="kruschke">Kruschke</option></select>
-            <label>Découpage (Sphère) :</label>
-            <select id="decoupe">
-                <option value="0.5">1/2 (Hémisphère)</option>
-                <option value="0.583" selected>7/12 (Taller Dome)</option>
-            </select>
-        </div>
-        <button class="btn-main" onclick="lancerCalculs()">VALIDER ET CALCULER</button>
-    </section>
+    <div class="main-container">
+        <aside id="sidebar" class="active">
+            <section>
+                <h3 class="title-section">Paramètres de la forme</h3>
+                <label>Polyèdre</label>
+                <select id="polyhedron">
+                    <option value="icosahedron">Icosaèdre</option>
+                    <option value="octahedron">Octaèdre</option>
+                </select>
 
-    <section id="materiaux" class="tab-content">
-        <h2>Caractéristiques du Matériel</h2>
-        <div class="input-group">
-            <label>Rayon sphère (m) :</label>
-            <input type="number" id="rayon" value="3.0" step="0.1">
-            <label>Type de connecteur :</label>
-            <select id="connecteur"><option value="goodkarma">GoodKarma</option></select>
-            <label>Largeur montant (mm) :</label>
-            <input type="number" id="largeur" value="50">
-            <label>Épaisseur (mm) :</label>
-            <input type="number" id="epaisseur" value="25">
-        </div>
-    </section>
+                <label>Fréquence, V</label>
+                <input type="number" id="frequency" value="2" min="1" max="6">
 
-    <section id="schema" class="tab-content">
-        <h2>Récapitulatif de Construction</h2>
-        <div id="resultats-hubs"></div>
-        <div id="table-results"></div>
-    </section>
+                <label>Méthode de subdivision</label>
+                <select id="subdivision">
+                    <option value="kruschte">Kruschte</option>
+                    <option value="equal">Cordes égales</option>
+                </select>
 
-    <section id="trent" class="tab-content">
-        <div id="renderer-container"></div>
-    </section>
+                <label>Découpage de la sphère</label>
+                <select id="sphere-cut">
+                    <option value="0.25">1/4</option>
+                    <option value="0.416">5/12</option>
+                    <option value="0.583">7/12</option>
+                    <option value="0.75" selected>3/4</option>
+                    <option value="1">1/1</option>
+                </select>
+            </section>
 
-    <section id="export" class="tab-content">
-        <h2>Exportation CSV</h2>
-        <button class="btn-main" style="background:#2980b9" onclick="exporterCSV()">TÉLÉCHARGER LE DOSSIER DE FABRICATION</button>
-    </section>
+            <section>
+                <h3 class="title-section">Caractéristiques du matériel</h3>
+                <label>Rayon de la sphère, m</label>
+                <input type="number" id="radius" value="2" step="0.1">
 
-    <section id="aide" class="tab-content">
-        <h2>Instructions</h2>
-        <p>Le découpage 7/12 nécessite plus de montants de type B et C pour fermer la base sous l'équateur.</p>
-    </section>
-</div>
+                <label>Type de connecteur</label>
+                <select id="connector">
+                    <option value="piped">Piped</option>
+                    <option value="goodkarma">GoodKarma</option>
+                    <option value="cone">Cone</option>
+                    <option value="joint">Joint</option>
+                </select>
+            </section>
 
-<script src="logic.js"></script>
-<script src="render3d.js"></script>
+            <section>
+                <h3 class="title-section">Taille des montants</h3>
+                <label>Largeur, mm</label>
+                <input type="number" id="beam-width" value="120">
+                <label>Épaisseur, mm</label>
+                <input type="number" id="beam-thickness" value="40">
+            </section>
+            
+            <button id="update-btn" onclick="updateCalculation()">Calculer & Mettre à jour</button>
+        </aside>
+
+        <main id="content">
+            <div id="page-schema" class="page active">
+                <div id="canvas-container"></div>
+            </div>
+
+            <div id="page-details" class="page">
+                <h2>Détails des montants</h2>
+                <div id="details-list"></div>
+            </div>
+
+            <div id="page-results" class="page">
+                <h2>Résultats du calcul</h2>
+                <div id="stats-output"></div>
+            </div>
+        </main>
+    </div>
+
+    <script src="script.js"></script>
 </body>
 </html>
