@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dôme Géodésique Pro - Calculateur</title>
+    <title>Dôme Géodésique Pro - 7/12 Edition</title>
     <link rel="stylesheet" href="style.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
@@ -31,6 +31,11 @@
             <input type="number" id="freqV" value="3" min="1" max="6">
             <label>Méthode :</label>
             <select id="methode"><option value="kruschke">Kruschke</option></select>
+            <label>Découpage (Sphère) :</label>
+            <select id="decoupe">
+                <option value="0.5">1/2 (Hémisphère)</option>
+                <option value="0.583" selected>7/12 (Taller Dome)</option>
+            </select>
         </div>
         <button class="btn-main" onclick="lancerCalculs()">VALIDER ET CALCULER</button>
     </section>
@@ -40,6 +45,8 @@
         <div class="input-group">
             <label>Rayon sphère (m) :</label>
             <input type="number" id="rayon" value="3.0" step="0.1">
+            <label>Type de connecteur :</label>
+            <select id="connecteur"><option value="goodkarma">GoodKarma</option></select>
             <label>Largeur montant (mm) :</label>
             <input type="number" id="largeur" value="50">
             <label>Épaisseur (mm) :</label>
@@ -48,8 +55,8 @@
     </section>
 
     <section id="schema" class="tab-content">
-        <h2>Tableau des Découpes</h2>
-        
+        <h2>Récapitulatif de Construction</h2>
+        <div id="resultats-hubs"></div>
         <div id="table-results"></div>
     </section>
 
@@ -58,14 +65,13 @@
     </section>
 
     <section id="export" class="tab-content">
-        <h2>Exportation des Données</h2>
-        <p>Téléchargez les résultats pour votre atelier de découpe (Format CSV).</p>
-        <button class="btn-main" style="background:#2980b9" onclick="exporterCSV()">TÉLÉCHARGER LE FICHIER .CSV</button>
+        <h2>Exportation CSV</h2>
+        <button class="btn-main" style="background:#2980b9" onclick="exporterCSV()">TÉLÉCHARGER LE DOSSIER DE FABRICATION</button>
     </section>
 
     <section id="aide" class="tab-content">
-        <h2>Aide & Instructions</h2>
-        <p>1. Réglez la géométrie. 2. Validez. 3. Vérifiez les montants dans "Schéma". 4. Visualisez en 3D dans "Trent".</p>
+        <h2>Instructions</h2>
+        <p>Le découpage 7/12 nécessite plus de montants de type B et C pour fermer la base sous l'équateur.</p>
     </section>
 </div>
 

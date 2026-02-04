@@ -1,13 +1,15 @@
 :root { --main: #2c3e50; --accent: #1abc9c; }
-body { font-family: sans-serif; margin: 0; background: #f4f7f6; }
+body { font-family: 'Segoe UI', sans-serif; margin: 0; background: #f4f7f6; }
 .menu-horizontal { display: flex; flex-wrap: wrap; background: var(--main); }
-.menu-horizontal button { flex: 1; min-width: 100px; padding: 15px; border: none; background: none; color: white; cursor: pointer; transition: 0.3s; font-weight: bold; }
+.menu-horizontal button { flex: 1; min-width: 100px; padding: 15px; border: none; background: none; color: white; cursor: pointer; transition: 0.3s; font-weight: bold; font-size: 0.8em; text-transform: uppercase; }
 .menu-horizontal button:hover { background: var(--accent); }
-.container { max-width: 900px; margin: 20px auto; padding: 10px; }
-.tab-content { display: none; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+.container { max-width: 950px; margin: 20px auto; padding: 10px; }
+.tab-content { display: none; background: white; padding: 25px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
 .active { display: block; }
-.input-group { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px; }
-.btn-main { width: 100%; padding: 15px; background: var(--accent); color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 1.1em; }
+.input-group { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px; }
+.btn-main { width: 100%; padding: 18px; background: var(--accent); color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 1.1em; font-weight: bold; }
 table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-th, td { border: 1px solid #ddd; padding: 12px; text-align: center; }
-#renderer-container { width: 100%; height: 500px; background: #000; border-radius: 5px; }
+th, td { border: 1px solid #eee; padding: 12px; text-align: center; }
+th { background: #f9f9f9; }
+#renderer-container { width: 100%; height: 500px; background: #000; border-radius: 8px; }
+.hub-info { display: flex; justify-content: space-around; background: #ecf0f1; padding: 15px; border-radius: 8px; margin-bottom: 20px; border-left: 5px solid var(--accent); }
