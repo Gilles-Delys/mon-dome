@@ -1,97 +1,50 @@
-:root {
-    --primary: #2c3e50;
-    --accent: #3498db;
-    --bg-light: #f4f7f6;
-    --sidebar-width: 280px;
-}
+:root { --primary: #2c3e50; --accent: #2980b9; --bg: #f5f6fa; }
 
 * { box-sizing: border-box; }
-body, html { margin: 0; padding: 0; font-family: 'Segoe UI', Arial, sans-serif; height: 100vh; overflow: hidden; background: var(--bg-light); }
+body, html { margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; height: 100vh; overflow: hidden; }
 
-/* Menu Horizontal */
 #top-menu {
-    height: 60px;
-    background: var(--primary);
-    display: flex;
-    align-items: center;
-    padding: 0 20px;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-    z-index: 100;
+    height: 50px; background: var(--primary); display: flex; align-items: center;
+    padding: 0 20px; gap: 10px; z-index: 1000; position: relative;
 }
-
-.nav-container { display: flex; gap: 10px; width: 100%; }
 
 #top-menu button {
-    background: rgba(255,255,255,0.1);
-    border: 1px solid rgba(255,255,255,0.2);
-    color: white;
-    padding: 10px 20px;
-    cursor: pointer;
-    border-radius: 4px;
-    font-weight: 500;
-    transition: 0.3s;
+    background: #34495e; color: white; border: none; padding: 8px 15px;
+    cursor: pointer; border-radius: 4px; font-weight: bold; font-size: 13px;
 }
 
-#top-menu button:hover { background: var(--accent); border-color: var(--accent); }
+#top-menu button:hover { background: var(--accent); }
 
-/* Layout */
-.main-container { display: flex; height: calc(100vh - 60px); }
+.main-container { display: flex; height: calc(100vh - 50px); width: 100%; }
 
 #sidebar {
-    width: var(--sidebar-width);
-    background: white;
-    border-right: 1px solid #ddd;
-    overflow-y: auto;
-    transition: 0.3s;
+    width: 280px; background: white; border-right: 1px solid #ddd;
+    padding: 15px; overflow-y: auto; flex-shrink: 0;
 }
 
-.sidebar-content { padding: 20px; }
+.title-section { font-size: 12px; color: var(--primary); margin: 20px 0 10px; }
+label { display: block; font-size: 11px; margin-top: 10px; font-weight: bold; color: #666; }
+input, select { width: 100%; padding: 6px; margin-top: 4px; border: 1px solid #ccc; border-radius: 4px; }
 
-.title-section { font-size: 0.85rem; margin: 20px 0 10px 0; color: var(--primary); }
+#content { flex-grow: 1; position: relative; background: #eee; }
 
-label { display: block; font-size: 0.8rem; margin-top: 15px; font-weight: bold; color: #555; }
-
-input, select {
-    width: 100%;
-    padding: 8px;
-    margin-top: 5px;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-    background: #fff;
-}
-
-/* Zone Contenu */
-#content { flex-grow: 1; position: relative; }
-
-.page { display: none; height: 100%; width: 100%; overflow-y: auto; background: white; }
+.page { display: none; width: 100%; height: 100%; overflow-y: auto; background: white; }
 .page.active { display: block; }
-#page-schema { background: transparent; }
 
-.page-inner { padding: 40px; max-width: 1000px; margin: 0 auto; }
+#canvas-container { width: 100%; height: 100%; position: relative; background: #fff; }
 
-#canvas-container { width: 100%; height: 100%; }
-
-/* Bulles labels 3D */
 .beam-label {
-    background: white;
-    border: 1px solid #333;
-    border-radius: 50%;
-    width: 22px;
-    height: 22px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 11px;
-    font-weight: bold;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    background: white; border: 1px solid black; border-radius: 50%;
+    width: 22px; height: 22px; display: flex; align-items: center;
+    justify-content: center; font-size: 10px; font-weight: bold;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.3); pointer-events: none;
 }
 
-/* Tableaux et résultats */
+.page-inner { padding: 30px; line-height: 1.6; }
 table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
+th, td { border: 1px solid #ddd; padding: 12px; text-align: center; }
 th { background: #f8f9fa; }
 
-/* Responsive */
 @media (max-width: 768px) {
     .main-container { flex-direction: column; }
     #sidebar { width: 100%; height: auto; border-right: none; border-bottom: 1px solid #ddd; }
