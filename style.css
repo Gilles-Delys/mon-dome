@@ -1,20 +1,15 @@
-:root {
-    --primary: #1a252f;
-    --accent: #2980b9;
-    --text: #2c3e50;
-    --bg: #ecf0f1;
-}
+:root { --primary: #1e272e; --accent: #0984e3; --bg: #f5f6fa; }
 
-body, html { margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; height: 100vh; overflow: hidden; background: var(--bg); }
+body, html { margin: 0; padding: 0; font-family: sans-serif; height: 100vh; overflow: hidden; background: var(--bg); color: #2f3640; }
 
 #top-menu {
     height: 50px; background: var(--primary);
-    display: flex; align-items: center; justify-content: center; gap: 10px;
+    display: flex; align-items: center; justify-content: flex-start; gap: 5px; padding: 0 10px;
 }
 
 #top-menu button {
-    background: #34495e; color: white; border: none; padding: 8px 15px;
-    cursor: pointer; border-radius: 3px; font-weight: 500;
+    background: #353b48; color: white; border: none; padding: 8px 16px;
+    cursor: pointer; border-radius: 4px; font-weight: bold; font-size: 0.85rem;
 }
 
 #top-menu button:hover { background: var(--accent); }
@@ -22,37 +17,41 @@ body, html { margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; height:
 .main-container { display: flex; height: calc(100vh - 50px); }
 
 #sidebar {
-    width: 280px; background: white; padding: 15px;
-    border-right: 1px solid #bdc3c7; overflow-y: auto;
+    width: 280px; background: white; padding: 15px; border-right: 1px solid #dcdde1;
+    overflow-y: auto; flex-shrink: 0;
 }
 
 .title-section {
-    font-size: 0.85rem; font-weight: bold; text-decoration: underline;
-    text-transform: uppercase; margin: 15px 0 5px; color: var(--primary);
+    font-size: 0.8rem; font-weight: bold; text-decoration: underline;
+    text-transform: uppercase; margin: 20px 0 10px; color: var(--primary);
 }
 
-label { display: block; font-size: 0.75rem; margin-top: 8px; color: #7f8c8d; }
+label { display: block; font-size: 0.75rem; margin-top: 10px; font-weight: 600; }
 
 input, select {
-    width: 100%; padding: 6px; margin-top: 3px;
-    border: 1px solid #dcdde1; border-radius: 4px;
+    width: 100%; padding: 7px; margin-top: 4px; box-sizing: border-box;
+    border: 1px solid #bdc3c7; border-radius: 4px;
 }
 
-#content { flex-grow: 1; position: relative; }
+#content { flex-grow: 1; position: relative; overflow: hidden; }
 
-.page { display: none; padding: 20px; height: 100%; overflow-y: auto; }
+.page { display: none; height: 100%; width: 100%; overflow-y: auto; }
 .page.active { display: block; }
+.page-inner { padding: 30px; }
 
-#canvas-container { width: 100%; height: 100%; }
+#canvas-container { width: 100%; height: 100%; background: transparent; }
 
-/* Style des bulles de texte sur les poutres */
 .beam-label {
-    background: white; border-radius: 50%; width: 18px; height: 18px;
+    background: white; border-radius: 50%; width: 20px; height: 20px;
     display: flex; align-items: center; justify-content: center;
-    font-size: 10px; font-weight: bold; border: 1px solid #333;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    font-size: 11px; font-weight: bold; border: 1.5px solid #2f3640;
 }
 
-table { width: 100%; border-collapse: collapse; background: white; }
-th, td { border: 1px solid #ddd; padding: 10px; text-align: center; }
-th { background: var(--primary); color: white; }
+table { width: 100%; border-collapse: collapse; margin-top: 20px; background: white; }
+th, td { border: 1px solid #dcdde1; padding: 12px; text-align: center; font-size: 0.9rem; }
+th { background: #f8f9fa; font-weight: bold; }
+
+@media (max-width: 768px) {
+    .main-container { flex-direction: column; }
+    #sidebar { width: 100%; height: 200px; border-right: none; border-bottom: 1px solid #ddd; }
+}

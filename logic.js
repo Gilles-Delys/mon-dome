@@ -1,80 +1,80 @@
-let derniersResultats = [];
-let derniersHubs = {};
+/**
+ * Gère les calculs géométriques et la structure des données du dôme.
+ */
+const Logic = {
+    beamColors: {
+        'A': '#e74c3c', 'B': '#2ecc71', 'C': '#3498db', 'D': '#f1c40f',
+        'E': '#9b59b6', 'F': '#e67e22', 'G': '#1abc9c', 'H': '#34495e', 'I': '#7f8c8d'
+    },
 
-function showTab(id) {
-    document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
-    document.getElementById(id).classList.add('active');
-    if(id === 'trent') init3D();
-}
+    getParams() {
+        return {
+            poly: document.getElementById('polyhedron').value,
+            freq: parseInt(document.getElementById('frequency').value),
+            cut: parseFloat(document.getElementById('sphere-cut').value),
+            radius: parseFloat(document.getElementById('radius').value),
+            bWidth: document.getElementById('beam-width').value,
+            bThick: document.getElementById('beam-thickness').value
+        };
+    },
 
-function lancerCalculs() {
-    const R = parseFloat(document.getElementById('rayon').value);
-    const decoupe = document.getElementById('decoupe').value; // 0.5 ou 0.583
-    
-    // Logique Kruschke 3V Icosaèdre
-    // En 7/12 (0.583), on ajoute une rangée de triangles (ceinture)
-    if (decoupe === "0.5") {
-        derniersResultats = [
-            { type: 'A', cf: 0.34862, qte: 30, color: 'Rouge' },
-            { type: 'B', cf: 0.40355, qte: 40, color: 'Vert' },
-            { type: 'C', cf: 0.41241, qte: 50, color: 'Bleu' }
-        ];
-        derniersHubs = { total: 61, h6: 25, h5: 6, h4: 15 };
-    } else {
-        // Correction pour le 7/12
-        derniersResultats = [
-            { type: 'A', cf: 0.34862, qte: 30, color: 'Rouge' },
-            { type: 'B', cf: 0.40355, qte: 55, color: 'Vert' },
-            { type: 'C', cf: 0.41241, qte: 80, color: 'Bleu' }
-        ];
-        derniersHubs = { total: 91, h6: 40, h5: 6, h4: 15 }; 
+    calculateDomeData(p) {
+        // Génération d'une géométrie temporaire pour extraire les données
+        const geo = (p.poly === 'icosahedron') ? 
+                    new THREE.IcosahedronGeometry(p.radius, p.freq) : 
+                    new THREE.OctahedronGeometry(p.radius, p.freq);
+
+        const pos = geo.attributes.position;
+        const threshold = -p.radius * (2 * p.cut - 1);
+        const edgesMap = new Map();
+        let totalLen = 0;
+        let facesCount = 0;
+
+        for (let i = 0; i < pos.count; i += 3) {
+            const v1 = new THREE.Vector3().fromBufferAttribute(pos, i);
+            if (v1.y >= threshold) facesCount++;
+
+            for (let j = 0; j < 3; j++) {
+                const va = new THREE.Vector3().fromBufferAttribute(pos, i + j);
+                const vb = new THREE.Vector3().fromBufferAttribute(pos, i + (j + 1) % 3);
+
+                if (va.y >= threshold && vb.y >= threshold) {
+                    const len = parseFloat(va.distanceTo(vb).toFixed(4));
+                    const key = [va.toArray().map(v => v.toFixed(2)).join(','), vb.toArray().map(v => v.toFixed(2)).join(',')].sort().join('|');
+                    if (!edgesMap.has(key)) {
+                        edgesMap.set(key, { va, vb, len });
+                        totalLen += len;
+                    }
+                }
+            }
+        }
+
+        // Classement par longueur pour attribuer A, B, C...
+        const uniqueLengths = Array.from(new Set(Array.from(edgesMap.values()).map(e => e.len))).sort((a, b) => b - a);
+        const edgeData = {};
+
+        edgesMap.forEach(edge => {
+            const typeIdx = uniqueLengths.indexOf(edge.len);
+            const type = String.fromCharCode(65 + typeIdx);
+            if (!edgeData[type]) edgeData[type] = { len: (edge.len * 1000).toFixed(1), count: 0, color: this.beamColors[type], rawLen: edge.len };
+            edgeData[type].count++;
+            edge.type = type;
+        });
+
+        return { edgesMap, edgeData, totalLen, facesCount, nodeCount: Math.round(edgesMap.size * 0.6) };
     }
+};
 
-    // Calcul des longueurs réelles
-    derniersResultats.forEach(s => {
-        s.longMM = (s.cf * R * 1000).toFixed(1);
-        s.angle = (Math.acos(s.cf / 2) * (180 / Math.PI)).toFixed(2);
-    });
-
-    // Affichage des Hubs
-    document.getElementById('resultats-hubs').innerHTML = `
-        <div class="hub-info">
-            <div><strong>Total Connecteurs:</strong> ${derniersHubs.total}</div>
-            <div><strong>6-branches:</strong> ${derniersHubs.h6}</div>
-            <div><strong>5-branches:</strong> ${derniersHubs.h5}</div>
-            <div><strong>Base (4-branches):</strong> ${derniersHubs.h4}</div>
-        </div>`;
-
-    // Affichage du tableau
-    let html = `<table><tr><th>Type</th><th>Couleur</th><th>Longueur (mm)</th><th>Qté</th><th>Angle de coupe</th></tr>`;
-    derniersResultats.forEach(s => {
-        html += `<tr><td>Strut ${s.type}</td><td style="color:${colorToHex(s.color)}">● ${s.color}</td><td><strong>${s.longMM}</strong></td><td>${s.qte}</td><td>${s.angle}°</td></tr>`;
-    });
-    html += `</table>`;
-    
-    document.getElementById('table-results').innerHTML = html;
-    showTab('schema');
-}
-
-function colorToHex(c) {
-    if(c === 'Rouge') return '#e74c3c';
-    if(c === 'Vert') return '#2ecc71';
-    return '#3498db';
-}
-
-function exporterCSV() {
-    if (derniersResultats.length === 0) return alert("Calculez d'abord !");
-    
-    let csv = "Fiche de fabrication Dome Geodesique\n";
-    csv += "Type;Couleur;Longueur_mm;Quantite;Angle\n";
-    derniersResultats.forEach(r => {
-        csv += `${r.type};${r.color};${r.longMM};${r.qte};${r.angle}\n`;
-    });
-    csv += `\nConnecteurs;Total;${derniersHubs.total}\n6-branches;${derniersHubs.h6}\n5-branches;${derniersHubs.h5}\nBase;${derniersHubs.h4}`;
-
+function exportCSV() {
+    const p = Logic.getParams();
+    const data = Logic.calculateDomeData(p);
+    let csv = "\ufeffType;Longueur (mm);Quantite;Largeur (mm);Epaisseur (mm)\n";
+    for (let t in data.edgeData) {
+        csv += `"${t}";"${data.edgeData[t].len}";"${data.edgeData[t].count}";"${p.bWidth}";"${p.bThick}"\n`;
+    }
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement("a");
     link.href = URL.createObjectURL(blob);
-    link.setAttribute("download", "Projet_Dome_7_12.csv");
+    link.download = `export_dome_${p.freq}V.csv`;
     link.click();
 }
