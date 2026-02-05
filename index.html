@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GéoDôme Pro v2.0</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+</head>
+<body>
+
+<header>
+    <nav id="main-nav">
+        <button id="nav-parametres" onclick="resetAndShow('parametres')" class="active">Paramètres</button>
+        <button id="nav-schema" onclick="showTab('schema')">Schéma</button>
+        <button id="nav-details" onclick="showTab('details')">Détails</button>
+        <button id="nav-resultats" onclick="showTab('resultats')">Résultats</button>
+        <button id="nav-export" onclick="showTab('export')">Export</button>
+    </nav>
+</header>
+
+<main id="app-container">
+    <section id="parametres" class="tab-content active">
+        <aside id="sidebar">
+            <h3 class="section-title">Paramètres de Construction</h3>
+            
+            <div class="input-group">
+                <label class="tooltip" title="C'est le paramètre le plus critique. Elle correspond au nombre de segments en lesquels chaque arête d'un triangle de base est divisée.&#10;• 1V : 20 faces égales.&#10;• 2V, 3V, 4V... : Plus la fréquence est élevée, plus le dôme est proche d'une sphère.">
+                    <strong>Fréquence V :</strong>
+                </label>
+                <select id="v-freq" onchange="updateAll()">
+                    <option value="2">2V</option>
+                    <option value="3">3V</option>
+                    <option value="4" selected>4V</option>
+                    <option value="5">5V</option>
+                    <option value="6">6V</option>
+                    <option value="7">7V</option>
+                    <option value="8">8V</option>
+                </select>
+            </div>
+
+            <div class="input-group">
+                <label class="tooltip" title="La dimension souhaitée du dôme. Tous les calculs découlent de ce rayon. La formule de base est : $L = r \times \text{Facteur d'arête}$.">
+                    <strong>Rayon de la sphère, M :</strong>
+                </label>
+                <input type="number" id="radius" value="2" step="0.1" onchange="updateAll()">
+            </div>
+
+            <div class="input-group">
+                <label class="tooltip" title="Un dôme n'est pas toujours une demi-sphère. Selon la fréquence, on choisit une coupe :&#10;• 1/2 (Hémisphère)&#10;• 3/8, 5/8 (Plus ou moins haut que le rayon).">
+                    <strong>La Fraction de Sphère :</strong>
+                </label>
+                <select id="fraction" onchange="updateAll()">
+                    <option value="0.375">3/8</option>
+                    <option value="0.5">1/2</option>
+                    <option value="0.625" selected>5/8</option>
+                </select>
+            </div>
+
+            <h3 class="section-title">Typologie du Dôme</h3>
+            <div class="radio-group">
+                <label class="tooltip" title="Système Star-Hub : Utilise des connecteurs. Précis pour les grandes structures.">
+                    <input type="radio" name="type" value="starhub" checked onchange="updateAll()"> Avec Connecteurs
+                </label>
+                <label class="tooltip" title="Méthode Krushke : Montants coupés avec angles spécifiques (Miter et Bevel) pour vissage direct.">
+                    <input type="radio" name="type" value="krushke" onchange="updateAll()"> Sans Connecteurs
+                </label>
+                <label class="tooltip" title="Dôme Hub-and-Strut : Le format classique de chantier (Buckminster Fuller).">
+                    <input type="radio" name="type" value="fuller" onchange="updateAll()"> Hub-and-Strut
+                </label>
+            </div>
+
+            <h3 class="section-title">Matériaux</h3>
+            <div class="input-group">
+                <label>Largeur, mm :</label>
+                <input type="number" id="width-mm" value="120" onchange="updateAll()">
+            </div>
+            <div class="input-group">
+                <label>Epaisseur, mm :</label>
+                <input type="number" id="thickness-mm" value="40" onchange="updateAll()">
+            </div>
+        </aside>
+
+        <div id="visualizer-container">
+            <div id="threejs-canvas"></div>
+        </div>
+    </section>
+
+    <section id="schema" class="tab-content"><div class="container"><h2>Schémas</h2><div id="schema-output"></div></div></section>
+    <section id="details" class="tab-content"><div class="container"><h2>Détails des Montants</h2><div id="details-output"></div></div></section>
+    <section id="resultats" class="tab-content"><div class="container"><h2>Résultats</h2><div id="results-output"></div></div></section>
+    <section id="export" class="tab-content">
+        <div class="container">
+            <h2>Exportation</h2>
+            <button class="btn-primary" onclick="exportCSV()">Exporter CSV pour LibreOffice</button>
+            <div id="assembly-guide"></div>
+        </div>
+    </section>
+</main>
+
+<script src="script.js"></script>
+</body>
+</html>
