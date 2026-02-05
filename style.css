@@ -1,118 +1,117 @@
-/* ... (Garder le CSS précédent, modifier/ajouter ce qui suit) ... */
-
-/* Mise à jour Vue 3D pour fond blanc */
-#view-3d {
-    background-color: white; /* Explicite */
+:root {
+    --bg-dark: #1e1e1e;
+    --panel-bg: #252526;
+    --text-main: #d4d4d4;
+    --accent: #007acc;
+    --border: #3e3e42;
 }
 
-/* Styles pour l'onglet Schéma */
-#view-schema {
-    background-color: white;
-    color: #333; /* Texte sombre sur fond blanc */
-    padding: 30px;
-}
-
-.schema-container {
-    max-width: 800px;
-    margin: 0 auto;
-}
-
-.schema-item {
-    background: #f8f9fa;
-    border: 1px solid #ddd;
-    border-radius: 8px;
-    margin-bottom: 20px;
-    padding: 20px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-}
-
-.schema-header {
-    margin-bottom: 15px;
-    padding-left: 15px;
-}
-
-.schema-header h3 {
+body {
     margin: 0;
-    color: #333;
-    font-size: 1.2rem;
+    font-family: 'Segoe UI', Tahoma, sans-serif;
+    background-color: var(--bg-dark);
+    color: var(--text-main);
+    overflow: hidden;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Navigation */
+.top-nav {
+    height: 50px;
+    background-color: #333337;
+    display: flex;
+    align-items: center;
+    padding: 0 10px;
+    border-bottom: 1px solid #000;
+}
+
+.nav-btn {
+    background: none;
     border: none;
-    text-transform: none;
-}
-
-.schema-details {
-    display: flex;
-    flex-direction: column;
-    gap: 15px;
-}
-
-.detail-row {
-    display: flex;
-    gap: 20px;
-    font-size: 0.95rem;
-    color: #555;
-    border-bottom: 1px solid #eee;
-    padding-bottom: 10px;
-}
-
-.angles-row {
-    display: flex;
-    gap: 20px;
-}
-
-.angle-box {
-    background: #e9ecef;
-    padding: 10px 15px;
-    border-radius: 6px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    min-width: 100px;
-}
-
-.angle-label {
-    font-size: 0.8rem;
+    color: var(--text-main);
+    padding: 0 20px;
+    height: 100%;
+    cursor: pointer;
+    font-size: 14px;
     text-transform: uppercase;
-    color: #666;
-    margin-bottom: 5px;
+    transition: background 0.2s;
 }
 
-.angle-value {
-    font-size: 1.2rem;
-    font-weight: bold;
-    color: #222;
-}
+.nav-btn:hover { background-color: #3e3e42; }
+.nav-btn.active { border-bottom: 3px solid var(--accent); background-color: #2d2d30; }
 
-/* Visualisation CSS de la planche */
-.strut-viz-container {
-    margin-top: 10px;
-    padding: 10px 0;
-}
-
-.strut-viz {
-    height: 40px;
-    position: relative;
-    border-radius: 2px;
+/* Layout */
+.main-container {
     display: flex;
-    justify-content: center;
-    align-items: center;
-    overflow: hidden; /* Pour couper proprement */
+    flex: 1;
+    overflow: hidden;
 }
 
-.strut-viz-text {
-    color: white;
-    font-weight: bold;
-    text-shadow: 0 1px 2px rgba(0,0,0,0.5);
-    z-index: 2;
+/* Sidebar */
+.sidebar {
+    width: 320px;
+    background-color: var(--panel-bg);
+    border-right: 1px solid var(--border);
+    padding: 20px;
+    overflow-y: auto;
 }
 
-/* Simulation des coupes (visuel approximatif) */
-.cut-left, .cut-right {
-    position: absolute;
-    top: 0;
-    bottom: 0;
-    width: 20px;
-    background-color: white; /* Couleur du fond pour "couper" */
-    z-index: 1;
+h2 { font-size: 14px; text-transform: uppercase; border-bottom: 1px solid var(--accent); padding-bottom: 5px; color: white; }
+h3 { color: white; }
+
+.control-group { margin-bottom: 15px; }
+label { display: block; margin-bottom: 5px; font-size: 13px; color: #ccc; }
+input, select {
+    width: 100%; padding: 8px;
+    background-color: #3c3c3c; border: 1px solid var(--border);
+    color: white; border-radius: 4px; box-sizing: border-box;
 }
-.cut-left { left: -10px; }
-.cut-right { right: -10px; }
+
+.radio-group label { display: block; margin-bottom: 8px; cursor: pointer; }
+
+/* Tooltip */
+.tooltip-trigger { position: relative; cursor: help; }
+.tooltip-trigger .tooltip {
+    visibility: hidden; position: absolute; left: 0; top: 100%;
+    background: #333; border: 1px solid #555; color: #fff;
+    padding: 10px; width: 220px; z-index: 100; font-size: 12px;
+    border-radius: 4px; box-shadow: 0 5px 10px rgba(0,0,0,0.5);
+}
+.tooltip-trigger:hover .tooltip { visibility: visible; }
+
+/* Contenu Principal */
+.content-area {
+    flex: 1;
+    position: relative;
+    background: radial-gradient(circle at center, #2d2d30 0%, #1e1e1e 100%);
+}
+
+.view-panel {
+    position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+    display: none; overflow-y: auto;
+}
+.view-panel.active { display: block; }
+
+.panel-content { padding: 30px; max-width: 900px; margin: 0 auto; }
+
+#canvas-container { width: 100%; height: 100%; }
+
+/* Résultats & Tableaux */
+.results-grid {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 15px; margin-bottom: 20px;
+}
+.res-item { background: #333; padding: 15px; border-left: 3px solid var(--accent); }
+
+table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 14px; }
+th, td { border: 1px solid var(--border); padding: 8px; text-align: left; }
+th { background-color: #333; }
+tr:nth-child(even) { background-color: #2a2a2a; }
+
+/* Schéma Items */
+.schema-item {
+    background: #333; border: 1px solid var(--border);
+    margin-bottom: 15px; padding: 15px; border-radius: 4px;
+}
