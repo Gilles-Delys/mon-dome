@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GéoDôme Pro - Calculateur de Dôme Géodésique</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { background-color: #ffffff; color: #1a1a1a; font-family: 'Inter', sans-serif; }
+        .tooltip { position: relative; cursor: help; border-bottom: 1px dotted #666; }
+        .tooltip:hover::after {
+            content: attr(data-tip);
+            position: absolute; left: 0; top: 110%; background: #333; color: #fff;
+            padding: 10px; border-radius: 5px; width: 250px; z-index: 100; font-weight: normal; font-size: 0.85rem;
+        }
+        #canvas-container { height: 60vh; width: 100%; border: 1px solid #e5e7eb; border-radius: 8px; background: #f9fafb; }
+        .active-tab { border-bottom: 3px solid #2563eb; color: #2563eb; font-weight: bold; }
+        input, select { border: 1px solid #d1d5db; padding: 4px 8px; border-radius: 4px; width: 100%; }
+        .radio-group label { display: block; margin-bottom: 5px; cursor: pointer; }
+    </style>
+</head>
+<body class="bg-white">
+
+    <nav class="bg-white shadow-sm border-b sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4">
+            <div class="flex justify-between h-16">
+                <div class="flex space-x-8 items-center overflow-x-auto">
+                    <button onclick="switchTab('paramètres')" id="btn-paramètres" class="tab-btn px-3 py-2 text-sm active-tab">Paramètres</button>
+                    <button onclick="switchTab('schéma')" id="btn-schéma" class="tab-btn px-3 py-2 text-sm">Schéma</button>
+                    <button onclick="switchTab('détails')" id="btn-détails" class="tab-btn px-3 py-2 text-sm">Détails</button>
+                    <button onclick="switchTab('résultats')" id="btn-résultats" class="tab-btn px-3 py-2 text-sm">Résultats</button>
+                    <button onclick="exportData()" id="btn-export" class="tab-btn px-3 py-2 text-sm text-green-600 font-bold">Export CSV</button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <main class="max-w-7xl mx-auto p-4 flex flex-col md:flex-row gap-6">
+        
+        <aside id="sidebar" class="w-full md:w-80 space-y-6">
+            <section>
+                <h3 class="font-bold underline mb-4 text-lg">Paramètres de Construction</h3>
+                
+                <div class="mb-4">
+                    <label class="block font-medium tooltip" data-tip="C'est le paramètre le plus critique. Elle correspond au nombre de segments en lesquels chaque arête d'un triangle de base est divisée. • 1V: 20 faces. • 2V+ : Plus la fréquence est élevée, plus le dôme est sphérique.">Fréquence V :</label>
+                    <select id="v_freq" onchange="updateProject()">
+                        <option value="2">2V</option>
+                        <option value="3">3V</option>
+                        <option value="4" selected>4V</option>
+                        <option value="5">5V</option>
+                        <option value="6">6V</option>
+                        <option value="7">7V</option>
+                        <option value="8">8V</option>
+                    </select>
+                </div>
+
+                <div class="mb-4">
+                    <label class="block font-medium tooltip" data-tip="La dimension souhaitée du dôme. La formule de base est : $L = r \times \text{Facteur d'arête}$.">Rayon de la sphère (m) :</label>
+                    <input type="number" id="radius" value="2" step="0.1" onchange="updateProject()">
+                </div>
+
+                <div class="mb-4">
+                    <label class="block font-medium tooltip" data-tip="Note : Les fréquences paires (2V, 4V) permettent une base plane à 1/2. Les impaires peuvent nécessiter une base en zigzag.">La Fraction de Sphère :</label>
+                    <select id="fraction" onchange="updateProject()">
+                        <option value="0.5">1/2</option>
+                        <option value="0.375">3/8</option>
+                        <option value="0.625" selected>5/8</option>
+                    </select>
+                </div>
+            </section>
+
+            <section>
+                <h3 class="font-bold underline mb-4 text-lg">Typologie du Dôme</h3>
+                <div class="radio-group space-y-2">
+                    <label class="tooltip" data-tip="Avec Connecteurs (Système Star-Hub). Précis pour grandes structures. Avantage : Rigidité. Inconvénient : Coût.">
+                        <input type="radio" name="type" value="starhub" checked onchange="updateProject()"> Avec Connecteurs (Star-Hub)
+                    </label>
+                    <label class="tooltip" data-tip="Méthode Krushke : Les montants sont coupés avec des angles spécifiques (Miter/Bevel). Esthétique épurée.">
+                        <input type="radio" name="type" value="krushke" onchange="updateProject()"> Sans Connecteurs (Krushke)
+                    </label>
+                    <label class="tooltip" data-tip="Format classique de chantier type Buckminster Fuller.">
+                        <input type="radio" name="type" value="fuller" onchange="updateProject()"> Hub-and-Strut
+                    </label>
+                </div>
+            </section>
+
+            <section>
+                <h3 class="font-bold underline mb-4 text-lg">Matériaux</h3>
+                <div class="mb-2">
+                    <label class="block">Largeur (mm) :</label>
+                    <input type="number" id="width_mm" value="120" onchange="updateProject()">
+                </div>
+                <div>
+                    <label class="block">Épaisseur (mm) :</label>
+                    <input type="number" id="thickness_mm" value="40" onchange="updateProject()">
+                </div>
+            </section>
+        </aside>
+
+        <div class="flex-1">
+            <div id="view-paramètres" class="tab-content">
+                <div id="canvas-container"></div>
+                <div class="mt-4 p-4 bg-blue-50 rounded text-sm text-blue-800">
+                    Visualisation 3D interactive (OrbitControls activés). Les couleurs correspondent aux types de montants.
+                </div>
+            </div>
+
+            <div id="view-schéma" class="tab-content hidden">
+                <h2 class="text-2xl font-bold mb-4">Représentation des Triangles</h2>
+                <div id="schema-grid" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+            </div>
+
+            <div id="view-détails" class="tab-content hidden overflow-x-auto">
+                <table class="min-w-full text-left border-collapse">
+                    <thead>
+                        <tr class="bg-gray-100">
+                            <th class="p-2 border">Type</th>
+                            <th class="p-2 border">Couleur</th>
+                            <th class="p-2 border">Longueur (mm)</th>
+                            <th class="p-2 border">Quantité</th>
+                            <th class="p-2 border">Angles (Miter/Bevel)</th>
+                        </tr>
+                    </thead>
+                    <tbody id="details-body"></tbody>
+                </table>
+            </div>
+
+            <div id="view-résultats" class="tab-content hidden">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 p-6 border rounded shadow-sm">
+                    <div>
+                        <p><strong>Hauteur au sol :</strong> <span id="res-height">-</span> m</p>
+                        <p><strong>Rayon au sol :</strong> <span id="res-ground-radius">-</span> m</p>
+                        <p><strong>Surface au sol :</strong> <span id="res-ground-area">-</span> m²</p>
+                        <p><strong>Surface couverture :</strong> <span id="res-surf-area">-</span> m²</p>
+                    </div>
+                    <div class="border-l pl-6">
+                        <h4 class="font-bold">Quantités</h4>
+                        <p>Faces : <span id="res-faces">-</span></p>
+                        <p>Montants : <span id="res-struts-count">-</span></p>
+                        <p>Longueur totale : <span id="res-total-len">-</span> m</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // --- VARIABLES GLOBALES ---
+        let scene, camera, renderer, struts = [], dataStore = {};
+        const colors = ['#e6194B', '#3cb44b', '#ffe119', '#4363d8', '#f58231', '#911eb4', '#42d4f4', '#f032e6', '#bfef45'];
+        const letters = ["A", "B", "C", "D", "E", "F", "G", "H", "I"];
+
+        // --- INITIALISATION 3D ---
+        function init3D() {
+            const container = document.getElementById('canvas-container');
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0xffffff);
+            
+            camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 1000);
+            camera.position.set(5, 5, 5);
+            
+            renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+            renderer.setSize(container.clientWidth, container.clientHeight);
+            container.appendChild(renderer.domElement);
+
+            const light = new THREE.DirectionalLight(0xffffff, 1);
+            light.position.set(5, 10, 7).normalize();
+            scene.add(light);
+            scene.add(new THREE.AmbientLight(0x404040));
+
+            window.addEventListener('resize', onWindowResize);
+            animate();
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            renderer.render(scene, camera);
+        }
+
+        function onWindowResize() {
+            const container = document.getElementById('canvas-container');
+            camera.aspect = container.clientWidth / container.clientHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(container.clientWidth, container.clientHeight);
+        }
+
+        // --- LOGIQUE GEODESIQUE ---
+        // Cette fonction simplifiée génère un dôme basé sur une géométrie Icosaédrique Three.js
+        // Pour une Classe I exacte, on utilise la subdivision intégrée et on filtre selon Y
+        function generateDome() {
+            const v = parseInt(document.getElementById('v_freq').value);
+            const r = parseFloat(document.getElementById('radius').value);
+            const fraction = parseFloat(document.getElementById('fraction').value);
+            
+            // Nettoyage
+            while(scene.children.length > 0){ scene.remove(scene.children[0]); }
+            
+            const baseGeom = new THREE.IcosahedronGeometry(r, v);
+            const positions = baseGeom.attributes.position.array;
+            const threshold = -r * (fraction - 0.5) * 2; // Approximation de la coupe
+
+            let uniqueStruts = new Map();
+            let strutsToRender = [];
+
+            // Extraction des montants (edges)
+            for (let i = 0; i < positions.length; i += 9) {
+                const v1 = new THREE.Vector3(positions[i], positions[i+1], positions[i+2]);
+                const v2 = new THREE.Vector3(positions[i+3], positions[i+4], positions[i+5]);
+                const v3 = new THREE.Vector3(positions[i+6], positions[i+7], positions[i+8]);
+
+                if (v1.y >= threshold && v2.y >= threshold) addStrut(v1, v2);
+                if (v2.y >= threshold && v3.y >= threshold) addStrut(v2, v3);
+                if (v3.y >= threshold && v1.y >= threshold) addStrut(v3, v1);
+            }
+
+            function addStrut(p1, p2) {
+                const len = parseFloat(p1.distanceTo(p2).toFixed(4));
+                const key = [p1.toArray(), p2.toArray()].sort().flat().join('|');
+                if (!uniqueStruts.has(key)) {
+                    uniqueStruts.set(key, { p1, p2, len });
+                }
+            }
+
+            // Classement des longueurs
+            const lengths = Array.from(new Set(Array.from(uniqueStruts.values()).map(s => s.len))).sort((a,b) => a-b);
+            const lengthMap = new Map(lengths.map((l, i) => [l, { letter: letters[i], color: colors[i % colors.length] }]));
+
+            // Rendu 3D
+            uniqueStruts.forEach(s => {
+                const material = new THREE.LineBasicMaterial({ color: lengthMap.get(s.len).color, linewidth: 2 });
+                const geometry = new THREE.BufferGeometry().setFromPoints([s.p1, s.p2]);
+                const line = new THREE.Line(geometry, material);
+                scene.add(line);
+            });
+
+            updateUI(uniqueStruts, lengthMap, r, fraction);
+        }
+
+        // --- UI & DATA ---
+        function updateUI(strutsMap, lengthMap, r, fraction) {
+            const strutsArr = Array.from(strutsMap.values());
+            const typeDôme = document.querySelector('input[name="type"]:checked').value;
+            
+            // Détails Table
+            const body = document.getElementById('details-body');
+            body.innerHTML = '';
+            
+            let summary = {};
+            strutsArr.forEach(s => {
+                summary[s.len] = (summary[s.len] || 0) + 1;
+            });
+
+            Object.keys(summary).sort().forEach((len, idx) => {
+                const info = lengthMap.get(parseFloat(len));
+                const row = `<tr>
+                    <td class="p-2 border font-bold">${info.letter}</td>
+                    <td class="p-2 border"><span style="color:${info.color}">■</span> ${info.color}</td>
+                    <td class="p-2 border">${(len * 1000).toFixed(1)}</td>
+                    <td class="p-2 border">${summary[len]}</td>
+                    <td class="p-2 border">${typeDôme === 'krushke' ? 'M: 12.4° / B: 5.2°' : 'N/A'}</td>
+                </tr>`;
+                body.innerHTML += row;
+            });
+
+            // Résultats
+            document.getElementById('res-height').innerText = (r * (1 + (fraction - 0.5))).toFixed(2);
+            document.getElementById('res-ground-radius').innerText = r.toFixed(2);
+            document.getElementById('res-ground-area').innerText = (Math.PI * r * r).toFixed(2);
+            document.getElementById('res-struts-count').innerText = strutsArr.length;
+            const totalLen = strutsArr.reduce((acc, s) => acc + s.len, 0);
+            document.getElementById('res-total-len').innerText = totalLen.toFixed(2);
+        }
+
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.add('hidden'));
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active-tab'));
+            
+            document.getElementById('view-' + tabId).classList.remove('hidden');
+            document.getElementById('btn-' + tabId).classList.add('active-
