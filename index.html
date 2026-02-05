@@ -3,79 +3,148 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Calculateur Géodésique Pro</title>
+    <title>Calculateur Dôme Géodésique - Pro</title>
     <link rel="stylesheet" href="style.css">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/renderers/CSS2DRenderer.js"></script>
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+                "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+            }
+        }
+    </script>
 </head>
 <body>
-    <nav id="top-menu">
-        <button onclick="showPage('settings')">Paramètres</button>
-        <button onclick="showPage('schema')">Schéma</button>
-        <button onclick="showPage('details')">Détails</button>
-        <button onclick="showPage('results')">Résultats</button>
-        <button onclick="exportCSV()" style="background:#27ae60">Export CSV</button>
+
+    <nav class="top-nav">
+        <button class="nav-btn active" data-target="parametres">Paramètres</button>
+        <button class="nav-btn" data-target="schema">Schéma</button>
+        <button class="nav-btn" data-target="details">Détails</button>
+        <button class="nav-btn" data-target="resultats">Résultats</button>
+        <button class="nav-btn" id="btn-export">Export</button>
     </nav>
 
     <div class="main-container">
-        <aside id="sidebar">
-            <h3 class="title-section"><u><b>Paramètres de la forme</b></u></h3>
-            <label>Polyèdre</label>
-            <select id="polyhedron">
-                <option value="icosahedron">Icosaèdre</option>
-                <option value="octahedron">Octaèdre</option>
-            </select>
-            <label>Fréquence, V</label>
-            <input type="number" id="frequency" value="3" min="1" max="6">
+        
+        <aside id="parametres" class="sidebar active-panel">
+            <h2>Paramètres de Construction</h2>
             
-            <label>Méthode de subdivision</label>
-            <select id="subdivision">
-                <option value="kruschte">Kruschte</option>
-                <option value="equal">Cordes égales</option>
-            </select>
-            
-            <label>Découpage de la sphère</label>
-            <select id="sphere-cut">
-                <option value="0.25">1/4</option>
-                <option value="0.416">5/12</option>
-                <option value="0.583">7/12</option>
-                <option value="0.75" selected>3/4</option>
-                <option value="1">1/1</option>
-            </select>
+            <div class="control-group">
+                <label class="tooltip-trigger">Fréquence V :
+                    <span class="tooltip">C'est le paramètre le plus critique. Elle correspond au nombre de segments... (voir détails complets dans JS)</span>
+                </label>
+                <select id="frequence">
+                    <option value="1">1V</option>
+                    <option value="2" selected>2V</option>
+                    <option value="3">3V</option>
+                    <option value="4">4V</option>
+                    <option value="5">5V</option>
+                    <option value="6">6V</option>
+                </select>
+            </div>
 
-            <h3 class="title-section"><u><b>Caractéristiques du matériel</b></u></h3>
-            <label>Rayon de la sphère, m</label>
-            <input type="number" id="radius" value="2.20" step="0.01">
-            <label>Type de connecteur</label>
-            <select id="connector">
-                <option value="goodkarma">GoodKarma</option>
-                <option value="piped">Piped</option>
-                <option value="cone">Cone</option>
-                <option value="joint">Joint</option>
-            </select>
+            <div class="control-group">
+                <label class="tooltip-trigger">Rayon de la sphère, M :
+                    <span class="tooltip">La dimension souhaitée du dôme. Tous les calculs découlent de ce rayon...</span>
+                </label>
+                <input type="number" id="rayon" value="2" step="0.1">
+            </div>
 
-            <h3 class="title-section"><u><b>Taille des montants</b></u></h3>
-            <label>Largeur, mm</label>
-            <input type="number" id="beam-width" value="120">
-            <label>Epaisseur, mm</label>
-            <input type="number" id="beam-thickness" value="40">
+            <div class="control-group">
+                <label class="tooltip-trigger">La Fraction de Sphère :
+                    <span class="tooltip">Un dôme n'est pas toujours une demi-sphère. 1/2, 3/8...</span>
+                </label>
+                <select id="fraction">
+                    <option value="0.5" selected>1/2 (Hémisphère)</option>
+                    <option value="0.375">3/8</option>
+                    <option value="0.625">5/8</option>
+                    <option value="0.5833">7/12</option>
+                </select>
+            </div>
+
+            <hr>
+            <h2>Type de Symétrie (Classe)</h2>
+            <div class="control-group">
+                <label class="tooltip-trigger">Classe :
+                    <span class="tooltip">Classe I : Icosaèdre standard. Classe II & III : Variantes...</span>
+                </label>
+                <select id="classe">
+                    <option value="1">I</option>
+                    </select>
+            </div>
+
+            <hr>
+            <h2>Typologie du Dôme</h2>
+            <div class="radio-group">
+                <label class="tooltip-trigger">
+                    <input type="radio" name="typologie" value="starhub"> Avec Connecteurs (Star-Hub)
+                    <span class="tooltip">Méthode précise pour grandes structures. Nécessite des connecteurs.</span>
+                </label>
+                <label class="tooltip-trigger">
+                    <input type="radio" name="typologie" value="goodkarma" checked> Sans Connecteurs (Good Karma)
+                    <span class="tooltip">Montants coupés avec angles spécifiques (Krushke). Économique et esthétique.</span>
+                </label>
+                <label class="tooltip-trigger">
+                    <input type="radio" name="typologie" value="panel"> Dôme Panel
+                    <span class="tooltip">Triangles pleins assemblés par les tranches.</span>
+                </label>
+                <label class="tooltip-trigger">
+                    <input type="radio" name="typologie" value="hubstrut"> Hub-and-Strut
+                    <span class="tooltip">Type Buckminster Fuller classique.</span>
+                </label>
+            </div>
+
+            <hr>
+            <h2>Matériaux</h2>
+            <div class="control-group">
+                <label>Largeur, mm :</label>
+                <input type="number" id="largeur" value="120">
+            </div>
+            <div class="control-group">
+                <label>Epaisseur, mm :</label>
+                <input type="number" id="epaisseur" value="40">
+            </div>
         </aside>
 
-        <main id="content">
-            <div id="page-schema" class="page active">
+        <main class="content-area">
+            
+            <div id="view-3d" class="view-panel active">
                 <div id="canvas-container"></div>
+                <div id="legend-overlay"></div>
             </div>
-            <div id="page-details" class="page">
-                <div class="page-inner" id="details-view"></div>
+
+            <div id="view-schema" class="view-panel hidden">
+                <div class="schema-container">
+                    <h3>Schémas de Découpe</h3>
+                    <div id="schema-content"></div>
+                </div>
             </div>
-            <div id="page-results" class="page">
-                <div class="page-inner" id="results-view"></div>
+
+            <div id="view-details" class="view-panel hidden">
+                <h3>Détails Techniques</h3>
+                <div id="details-content"></div>
             </div>
+
+            <div id="view-resultats" class="view-panel hidden">
+                <h3>Résultats Globaux</h3>
+                <div class="results-grid">
+                    <div class="res-item"><strong>Hauteur au sol :</strong> <span id="res-hauteur">0</span> m</div>
+                    <div class="res-item"><strong>Rayon au sol :</strong> <span id="res-rayon">0</span> m</div>
+                    <div class="res-item"><strong>Surface au sol :</strong> <span id="res-sol">0</span> m²</div>
+                    <div class="res-item"><strong>Surface couverture :</strong> <span id="res-couv">0</span> m²</div>
+                </div>
+                <h4>Quantités</h4>
+                <div class="results-grid">
+                    <div class="res-item"><strong>Faces :</strong> <span id="res-faces">0</span></div>
+                    <div class="res-item"><strong>Montants :</strong> <span id="res-montants">0</span></div>
+                    <div class="res-item"><strong>Dimensions Totales :</strong> <span id="res-total-len">0</span> m</div>
+                </div>
+                <div id="strut-list-table"></div>
+            </div>
+
         </main>
     </div>
 
-    <script src="logic.js"></script>
-    <script src="render3d.js"></script>
+    <script type="module" src="script.js"></script>
 </body>
 </html>
