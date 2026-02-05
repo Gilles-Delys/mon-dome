@@ -1,6 +1,5 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-import { CSS2DRenderer, CSS2DObject } from 'three/addons/renderers/CSS2DRenderer.js';
 
 // --- Configuration Globale & État ---
 const state = {
@@ -13,11 +12,12 @@ const state = {
     thickness: 40 // mm
 };
 
-// Données calculées stockées ici pour l'export et l'affichage
 let geometryData = {
-    struts: [], // { id, p1, p2, length, type, color, angle... }
+    struts: [],
+    faces: [],
     nodes: [],
-    stats: {}
+    stats: {},
+    strutTypes: []
 };
 
 // Couleurs par type de montant (A, B, C...)
@@ -27,42 +27,39 @@ const STRUT_COLORS = [
 const STRUT_LETTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 
 // --- Three.js Setup ---
-let scene, camera, renderer, labelRenderer, controls;
+let scene, camera, renderer, controls;
 const container = document.getElementById('canvas-container');
 
 function initThree() {
     scene = new THREE.Scene();
-    
-    // Caméra
+    scene.background = new THREE.Color(0xffffff); // Fond blanc demandé
+
     camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 100);
     camera.position.set(5, 5, 5);
 
-    // Renderer WebGL
-    renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
+    renderer = new THREE.WebGLRenderer({ alpha: false, antialias: true }); // Alpha false pour fond blanc solide
     renderer.setSize(container.clientWidth, container.clientHeight);
     renderer.setPixelRatio(window.devicePixelRatio);
+    renderer.shadowMap.enabled = true;
     container.appendChild(renderer.domElement);
 
-    // Renderer pour les labels HTML (CSS2D)
-    labelRenderer = new CSS2DRenderer();
-    labelRenderer.setSize(container.clientWidth, container.clientHeight);
-    labelRenderer.domElement.style.position = 'absolute';
-    labelRenderer.domElement.style.top = '0px';
-    labelRenderer.domElement.style.pointerEvents = 'none'; // Laisser passer les clics
-    container.appendChild(labelRenderer.domElement);
-
-    // Contrôles
     controls = new OrbitControls(camera, renderer.domElement);
     controls.enableDamping = true;
+    controls.dampingFactor = 0.05;
 
-    // Lumière
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
+    // Éclairage amélioré pour fond blanc
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
     scene.add(ambientLight);
+    
     const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
     dirLight.position.set(10, 20, 10);
+    dirLight.castShadow = true;
     scene.add(dirLight);
 
-    // Events resize
+    const backLight = new THREE.DirectionalLight(0xffffff, 0.3);
+    backLight.position.set(-10, -10, -5);
+    scene.add(backLight);
+
     window.addEventListener('resize', onWindowResize);
 }
 
@@ -71,86 +68,48 @@ function onWindowResize() {
     camera.aspect = container.clientWidth / container.clientHeight;
     camera.updateProjectionMatrix();
     renderer.setSize(container.clientWidth, container.clientHeight);
-    labelRenderer.setSize(container.clientWidth, container.clientHeight);
 }
 
-// --- Moteur Mathématique Géodésique (Simplifié pour la démo mais structuré pour la précision) ---
+// --- Moteur Mathématique Géodésique ---
 
-// Icosaèdre de base (Rayon 1)
 const PHI = (1 + Math.sqrt(5)) / 2;
-const BASE_VERTICES = [
-    [-1, PHI, 0], [1, PHI, 0], [-1, -PHI, 0], [1, -PHI, 0],
-    [0, -1, PHI], [0, 1, PHI], [0, -1, -PHI], [0, 1, -PHI],
-    [PHI, 0, -1], [PHI, 0, 1], [-PHI, 0, -1], [-PHI, 0, 1]
-].map(v => new THREE.Vector3(...v).normalize());
-
-const BASE_FACES = [
-    [0, 11, 5], [0, 5, 1], [0, 1, 7], [0, 7, 10], [0, 10, 11],
-    [1, 5, 9], [5, 11, 4], [11, 10, 2], [10, 7, 6], [7, 1, 8],
-    [3, 9, 4], [3, 4, 2], [3, 2, 6], [3, 6, 8], [3, 8, 9],
-    [4, 9, 5], [2, 4, 11], [6, 2, 10], [8, 6, 7], [9, 8, 1]
-];
 
 function calculateGeodesic() {
-    // 1. Génération des sommets selon la fréquence V
-    let vertices = [];
-    // Note: Pour une implémentation complète V1-V8 précise, on subdivise les faces.
-    // Ici, nous utilisons une approche générique simplifiée pour la structure.
-    
-    // Algorithme de subdivision de faces (Approche Class I)
-    let complexVertices = []; // Stocke les vecteurs
-    
-    // Fonction helper pour subdiviser un triangle
-    const subdivide = (v1, v2, v3, freq) => {
-        const pts = [];
-        for (let i = 0; i <= freq; i++) {
-            for (let j = 0; j <= freq - i; j++) {
-                // Coordonnées barycentriques
-                const vec = new THREE.Vector3()
-                    .addScaledVector(v1, (freq - i - j) / freq)
-                    .addScaledVector(v2, i / freq)
-                    .addScaledVector(v3, j / freq)
-                    .normalize()
-                    .multiplyScalar(state.radius); // Appliquer le rayon M
-                pts.push(vec);
-            }
-        }
-        return pts;
-    };
+    // 1. Génération des sommets de base (Icosaèdre)
+    const baseVerts = [
+        [-1, PHI, 0], [1, PHI, 0], [-1, -PHI, 0], [1, -PHI, 0],
+        [0, -1, PHI], [0, 1, PHI], [0, -1, -PHI], [0, 1, -PHI],
+        [PHI, 0, -1], [PHI, 0, 1], [-PHI, 0, -1], [-PHI, 0, 1]
+    ].map(v => new THREE.Vector3(...v).normalize());
 
-    // Génération des points (simplifiée : on prend juste les arêtes uniques)
-    // Pour une vraie app 8V, on utiliserait un dictionnaire de sommets pour éviter les doublons.
-    // Ici, pour la démo, on re-calcule une structure propre pour V=1, 2.
-    // Pour aller plus loin, il faut un index spatial.
-    
-    // --- Simulation des calculs pour l'exemple (Pour que le code tourne immédiatement) ---
-    // Dans une version production "Diamant", cette section contiendrait l'algo de tessellation complet.
-    // Je vais utiliser une librairie interne minimale pour générer les arêtes.
-    
-    let rawStruts = [];
-    
-    // Génération naïve pour V1-V4 (support partiel pour l'affichage)
-    // On itère sur les faces de base
+    const baseFaces = [
+        [0, 11, 5], [0, 5, 1], [0, 1, 7], [0, 7, 10], [0, 10, 11],
+        [1, 5, 9], [5, 11, 4], [11, 10, 2], [10, 7, 6], [7, 1, 8],
+        [3, 9, 4], [3, 4, 2], [3, 2, 6], [3, 6, 8], [3, 8, 9],
+        [4, 9, 5], [2, 4, 11], [6, 2, 10], [8, 6, 7], [9, 8, 1]
+    ];
+
     let nodes = [];
-    
-    // Dictionnaire pour fusionner les sommets proches (epsilon 0.001)
     const getNodeIndex = (vec) => {
         for(let i=0; i<nodes.length; i++) {
-            if(nodes[i].distanceTo(vec) < 0.001) return i;
+            if(nodes[i].distanceTo(vec) < 0.0001) return i;
         }
         nodes.push(vec);
         return nodes.length - 1;
     };
 
-    BASE_FACES.forEach(faceIndices => {
-        const vA = BASE_VERTICES[faceIndices[0]];
-        const vB = BASE_VERTICES[faceIndices[1]];
-        const vC = BASE_VERTICES[faceIndices[2]];
+    // 2. Tessellation (Subdivision)
+    let rawFaces = []; // Stocke des triplets d'indices de noeuds
+
+    baseFaces.forEach(faceIndices => {
+        const vA = baseVerts[faceIndices[0]];
+        const vB = baseVerts[faceIndices[1]];
+        const vC = baseVerts[faceIndices[2]];
         
         // Grille de points sur la face
-        let facePoints = [];
+        let faceGrid = [];
         for (let i = 0; i <= state.v; i++) {
-            facePoints[i] = [];
+            faceGrid[i] = [];
             for (let j = 0; j <= state.v - i; j++) {
                  const vec = new THREE.Vector3()
                     .addScaledVector(vA, (state.v - i - j) / state.v)
@@ -158,97 +117,117 @@ function calculateGeodesic() {
                     .addScaledVector(vC, j / state.v)
                     .normalize()
                     .multiplyScalar(state.radius);
-                facePoints[i][j] = getNodeIndex(vec);
+                faceGrid[i][j] = getNodeIndex(vec);
             }
         }
 
-        // Création des arêtes (Struts)
+        // Création des faces triangulaires subdivisées
         for (let i = 0; i < state.v; i++) {
             for (let j = 0; j < state.v - i; j++) {
-                // Horizontal
-                if (j < state.v - i) {
-                    rawStruts.push({ start: facePoints[i][j], end: facePoints[i][j+1] });
-                }
-                // Diagonale droite
-                if (i < state.v) {
-                    rawStruts.push({ start: facePoints[i][j], end: facePoints[i+1][j] });
-                }
-                // Diagonale gauche
-                if (j > 0) {
-                     rawStruts.push({ start: facePoints[i][j], end: facePoints[i+1][j-1] });
+                // Triangle "debout"
+                rawFaces.push([ faceGrid[i][j], faceGrid[i+1][j], faceGrid[i][j+1] ]);
+                // Triangle "renversé" (si pas à la limite)
+                if (j < state.v - i - 1) {
+                    rawFaces.push([ faceGrid[i+1][j], faceGrid[i+1][j+1], faceGrid[i][j+1] ]);
                 }
             }
         }
     });
 
-    // Filtre des doublons d'arêtes
-    let uniqueStruts = [];
-    const strutKey = (a, b) => a < b ? `${a}-${b}` : `${b}-${a}`;
-    const strutSet = new Set();
+    // 3. Filtrage selon la Fraction (Coupe)
+    // Seuil de coupe (Cutoff Y)
+    let maxY = -Infinity;
+    nodes.forEach(n => { if(n.y > maxY) maxY = n.y; });
     
-    rawStruts.forEach(s => {
-        const key = strutKey(s.start, s.end);
-        if(!strutSet.has(key)) {
-            strutSet.add(key);
-            uniqueStruts.push(s);
-        }
-    });
+    // Déterminer le plan de coupe théorique
+    // Pour 1/2, on coupe à ~0. Pour 3/8, on coupe plus haut.
+    // Astuce: On cherche les "anneaux". Pour simplifier ici :
+    let yThreshold = -Infinity;
+    
+    // Pour assurer une base plate et correcte :
+    // On analyse la distribution des Y pour trouver les "niveaux"
+    let yLevels = nodes.map(n => n.y).map(y => parseFloat(y.toFixed(3)));
+    yLevels = [...new Set(yLevels)].sort((a,b) => a-b);
+    
+    // Logique simplifiée de sélection du niveau de base selon la fraction
+    if (state.fraction <= 0.4) { // 3/8
+        // On prend grossièrement les 40% supérieurs
+        yThreshold = yLevels[Math.floor(yLevels.length * 0.4)]; 
+    } else if (state.fraction <= 0.6) { // 1/2
+        // Autour de 0, on cherche le niveau juste en dessous de 0 ou égal
+        // Pour V pair, l'équateur est un niveau exact.
+        // On fixe un seuil permissif pour inclure l'équateur (base plate)
+        yThreshold = -0.01; 
+        if(state.v % 2 !== 0) yThreshold = 0.1; // V impair, pas de base plate parfaite sans Krushke avancé, on coupe au-dessus
+    } else { // 5/8
+        yThreshold = -state.radius * 0.5;
+    }
 
-    // 2. Application de la Fraction (Coupe du dôme)
-    // On trouve le Y min et max.
-    // Pour 1/2, on coupe à Y=0 (approximativement, selon V).
-    // Pour simplifier, on filtre les struts dont les deux bouts sont au-dessus du plan de coupe.
-    
-    // Plan de coupe théorique :
-    // 1/2 sphère => centre à 0.
-    // 3/8 sphère => on garde le haut.
-    // Formule approx hauteur de coupe :
-    let cutOffY = -state.radius; // Base
-    if (state.fraction == 0.5) cutOffY = -0.1; // Hémisphère (tolérance)
-    if (state.fraction == 0.375) cutOffY = state.radius * 0.2; // 3/8 (plus haut)
-    if (state.fraction == 0.625) cutOffY = -state.radius * 0.5; // 5/8 (plus bas)
-    
-    // Ajustement précis pour fond plat si V pair : souvent on aligne sur les noeuds les plus bas.
-    // Ici, filtre simple :
-    let finalStruts = [];
-    uniqueStruts.forEach(s => {
-        const p1 = nodes[s.start];
-        const p2 = nodes[s.end];
-        // Si les deux points sont au dessus du cutoff
-        // (Note: C'est une simplification, en réalité on cherche les anneaux de latitude)
-        // Pour V2 1/2, le bas est plat.
+    // Filtrer les faces : une face est gardée si son centre est > seuil OU si tous ses points sont > seuil
+    // Méthode stricte "Base plate" : on garde les faces dont les 3 sommets sont >= seuil (avec tolérance)
+    let activeFaces = [];
+    const TOLERANCE = 0.05; // Tolérance pour inclure les points limites
+
+    rawFaces.forEach(tri => {
+        const p1 = nodes[tri[0]];
+        const p2 = nodes[tri[1]];
+        const p3 = nodes[tri[2]];
+        const centroidY = (p1.y + p2.y + p3.y) / 3;
         
-        // Logique "Krushke" : On garde tout ce qui est au dessus d'un certain seuil
-        // Pour V pair, l'équateur passe par des sommets.
-        let threshold = -0.05; // Tolérance zéro
-        if (state.fraction < 0.5) threshold = state.radius * 0.3; // Approx pour 3/8
+        // Critère d'inclusion
+        let keep = false;
+        // Si les 3 points sont au dessus d'un seuil strict (ex: y > -0.1 pour hémisphère)
+        // Pour inclure les struts de base, il faut que la face "pose" sur le sol ou soit au dessus.
+        // Pour V2 1/2, la base est à Y ~ 0.
+        // On utilise le yThreshold calculé plus haut.
+        
+        // Ajustement dynamique du threshold pour V2/V4 (base plate)
+        let localThresh = yThreshold;
+        if(state.v % 2 === 0 && Math.abs(state.fraction - 0.5) < 0.1) localThresh = -0.01;
 
-        if (p1.y > (threshold * state.radius) || p2.y > (threshold * state.radius)) {
-             // Pour être propre, on ne garde que si les deux sont valides ou si c'est la base
-             // Ici on simplifie : on garde tout. Dans un script "Diamant", on calcule les anneaux exacts.
-             finalStruts.push({ p1: p1, p2: p2 });
+        if (p1.y >= localThresh - TOLERANCE && p2.y >= localThresh - TOLERANCE && p3.y >= localThresh - TOLERANCE) {
+            activeFaces.push(tri);
         }
     });
 
-    // 3. Classification des longueurs (A, B, C...)
-    // Calcul des longueurs réelles
-    finalStruts.forEach(s => {
-        s.length = s.p1.distanceTo(s.p2);
-    });
-
-    // Groupement par longueur (tolérance 1mm)
-    let lengths = [];
-    finalStruts.forEach(s => lengths.push(s.length));
+    // 4. Extraction des Struts Uniques à partir des faces actives
+    let strutsMap = new Map(); // Key: "min-max", Value: {len, p1, p2, faces: []}
     
-    // Trouver les longueurs uniques
-    let uniqueLengths = [];
-    lengths.forEach(l => {
-        let found = uniqueLengths.find(ul => Math.abs(ul - l) < 0.001);
-        if (!found) uniqueLengths.push(l);
+    activeFaces.forEach((tri, faceIdx) => {
+        const edges = [[tri[0], tri[1]], [tri[1], tri[2]], [tri[2], tri[0]]];
+        edges.forEach(edge => {
+            const idx1 = Math.min(edge[0], edge[1]);
+            const idx2 = Math.max(edge[0], edge[1]);
+            const key = `${idx1}-${idx2}`;
+            
+            if(!strutsMap.has(key)) {
+                strutsMap.set(key, {
+                    key: key,
+                    startIdx: idx1,
+                    endIdx: idx2,
+                    p1: nodes[idx1],
+                    p2: nodes[idx2],
+                    length: nodes[idx1].distanceTo(nodes[idx2]),
+                    adjFaces: [] // Stocke les indices des faces adjacentes
+                });
+            }
+            strutsMap.get(key).adjFaces.push(activeFaces[faceIdx]); // On stocke la face (triplet d'indices)
+        });
     });
-    uniqueLengths.sort((a, b) => a - b);
 
-    // Assigner Type et Couleur
+    // Conversion Map -> Array
+    let finalStruts = Array.from(strutsMap.values());
+
+    // 5. Classification des longueurs (A, B, C...)
+    // Groupement (tolérance 1mm)
+    let uniqueLengths = [];
+    finalStruts.forEach(s => {
+        let found = uniqueLengths.find(ul => Math.abs(ul - s.length) < 0.001);
+        if (!found) uniqueLengths.push(s.length);
+    });
+    uniqueLengths.sort((a, b) => a - b); // Plus court au plus long
+
+    // Assigner types
     finalStruts.forEach(s => {
         let typeIndex = uniqueLengths.findIndex(ul => Math.abs(ul - s.length) < 0.001);
         s.type = STRUT_LETTERS[typeIndex];
@@ -256,119 +235,196 @@ function calculateGeodesic() {
         s.typeIndex = typeIndex;
     });
 
-    // Stats
-    geometryData.struts = finalStruts;
-    geometryData.nodes = nodes; // Attention, contient tous les noeuds, même ceux coupés. À nettoyer.
-    
-    // Calcul des résultats
-    let maxY = -Infinity;
-    finalStruts.forEach(s => {
-        if(s.p1.y > maxY) maxY = s.p1.y;
-        if(s.p2.y > maxY) maxY = s.p2.y;
-    });
-    
-    // Rayon au sol (approx des points les plus bas)
-    let groundRadius = 0;
-    // ... Logique pour trouver le cercle circonscrit de la base ...
-    
-    geometryData.stats = {
-        height: maxY + state.radius, // Hauteur depuis le sol
-        radius: state.radius,
-        surfaceSol: Math.PI * Math.pow(state.radius, 2), // Approx simple
-        surfaceDome: 2 * Math.PI * Math.pow(state.radius, 2), // Pour 1/2 sphère
-        countStruts: finalStruts.length,
-        totalLength: finalStruts.reduce((acc, s) => acc + s.length, 0),
-        types: uniqueLengths.map((l, i) => ({
+    // 6. Calculs des Angles "Good Karma" (Miter & Bevel)
+    let strutTypesData = uniqueLengths.map((len, i) => {
+        return {
             id: STRUT_LETTERS[i],
-            length: l,
-            count: finalStruts.filter(s => s.type === STRUT_LETTERS[i]).length,
-            color: STRUT_COLORS[i % STRUT_COLORS.length]
-        }))
+            length: len,
+            count: 0,
+            color: STRUT_COLORS[i % STRUT_COLORS.length],
+            miterAngle: 0,
+            bevelAngle: 0
+        };
+    });
+
+    finalStruts.forEach(s => {
+        strutTypesData[s.typeIndex].count++;
+        
+        // Calcul Angles si pas encore fait pour ce type
+        // On le fait une fois par type, sur une arête qui a 2 faces (pas bordure base) si possible
+        // Si c'est une arête de base (1 seule face), le calcul est différent (souvent coupe droite ou angle sol)
+        if (strutTypesData[s.typeIndex].miterAngle === 0 && s.adjFaces.length === 2) {
+            
+            // --- Calcul Bevel (Angle de lame) ---
+            // Angle dièdre entre les deux faces
+            const f1 = s.adjFaces[0];
+            const f2 = s.adjFaces[1];
+            
+            const getNormal = (tri) => {
+                const u = new THREE.Vector3().subVectors(nodes[tri[1]], nodes[tri[0]]);
+                const v = new THREE.Vector3().subVectors(nodes[tri[2]], nodes[tri[0]]);
+                return new THREE.Vector3().crossVectors(u, v).normalize();
+            };
+            
+            const n1 = getNormal(f1);
+            const n2 = getNormal(f2);
+            
+            // Angle entre normales. Dièdre = 180 - angle_normales (ou l'inverse selon orientation)
+            // Dot product gives cos(theta)
+            let dot = n1.dot(n2);
+            // Clamp pour éviter erreurs float
+            dot = Math.max(-1, Math.min(1, dot));
+            const angleRad = Math.acos(dot);
+            const angleDeg = THREE.MathUtils.radToDeg(angleRad);
+            
+            // Dans un dôme convexe, l'angle Dièdre intérieur est (180 - angleDeg).
+            // Le Bevel (angle de lame par rapport à la verticale du bois) est angleDeg / 2.
+            // Ex: Icosaèdre, dièdre ~138°. Angle entre normales ~41.8°. Bevel = 20.9°.
+            const bevel = angleDeg / 2;
+            strutTypesData[s.typeIndex].bevelAngle = bevel;
+
+            // --- Calcul Miter (Angle de coupe en bout) ---
+            // C'est l'angle du triangle de la face au coin correspondant.
+            // On prend la première face f1. L'arête s est un côté.
+            // Trouver le 3ème sommet de f1 qui n'est pas sur s
+            const otherIdx = f1.find(idx => idx !== s.startIdx && idx !== s.endIdx);
+            const pApex = nodes[otherIdx]; // Sommet opposé
+            const pStart = nodes[s.startIdx];
+            const pEnd = nodes[s.endIdx];
+            
+            // On calcule l'angle au sommet pStart (angle entre s et l'autre arête)
+            const vecS = new THREE.Vector3().subVectors(pEnd, pStart).normalize(); // vecteur le long du strut
+            const vecO = new THREE.Vector3().subVectors(pApex, pStart).normalize(); // vecteur vers l'autre sommet
+            
+            const angleCornerRad = vecS.angleTo(vecO);
+            const angleCornerDeg = THREE.MathUtils.radToDeg(angleCornerRad);
+            
+            // Miter Angle (complémentaire pour coupe scie à onglet) : 90 - angleCorner
+            const miter = 90 - angleCornerDeg; 
+            strutTypesData[s.typeIndex].miterAngle = miter;
+        }
+    });
+
+    // 7. Calculs Statistiques Finaux
+    // Hauteur max réelle
+    let realMaxY = -Infinity;
+    let realMinY = Infinity;
+    activeFaces.forEach(f => f.forEach(idx => {
+        if(nodes[idx].y > realMaxY) realMaxY = nodes[idx].y;
+        if(nodes[idx].y < realMinY) realMinY = nodes[idx].y;
+    }));
+    
+    // Rayon au sol : rayon du cercle circonscrit aux points les plus bas
+    // On prend un point du bas (p.ex realMinY)
+    let groundPoints = nodes.filter(n => Math.abs(n.y - realMinY) < 0.05);
+    let groundRadius = 0;
+    if(groundPoints.length > 0) {
+        // Distance horizontale au centre (0,0)
+        groundRadius = Math.sqrt(groundPoints[0].x**2 + groundPoints[0].z**2);
+    } else {
+        groundRadius = state.radius; // Fallback
+    }
+
+    const height = realMaxY - realMinY;
+    
+    // Surface Sol = Pi * r_sol^2
+    const surfaceSol = Math.PI * Math.pow(groundRadius, 2);
+    
+    // Surface Couverture = Somme des aires des faces actives
+    let surfaceCouv = 0;
+    activeFaces.forEach(tri => {
+        const a = nodes[tri[0]];
+        const b = nodes[tri[1]];
+        const c = nodes[tri[2]];
+        const ab = a.distanceTo(b);
+        const bc = b.distanceTo(c);
+        const ca = c.distanceTo(a);
+        // Héron
+        const s = (ab + bc + ca) / 2;
+        surfaceCouv += Math.sqrt(s * (s - ab) * (s - bc) * (s - ca));
+    });
+
+    geometryData.struts = finalStruts;
+    geometryData.faces = activeFaces;
+    geometryData.strutTypes = strutTypesData;
+    geometryData.stats = {
+        height: height,
+        radiusSol: groundRadius,
+        surfaceSol: surfaceSol,
+        surfaceCouv: surfaceCouv,
+        countFaces: activeFaces.length,
+        countStruts: finalStruts.length,
+        totalLength: finalStruts.reduce((acc, s) => acc + s.length, 0)
     };
 }
 
 // --- Visualisation ---
 
 function drawDome() {
-    // Nettoyer la scène
-    while(scene.children.length > 0){ 
-        scene.remove(scene.children[0]); 
-    }
-    // Remettre lumières
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
-    scene.add(ambientLight);
-    const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
-    dirLight.position.set(10, 20, 10);
-    scene.add(dirLight);
+    // Nettoyer la scène (garder les lumières)
+    const toRemove = [];
+    scene.traverse(child => {
+        if (child.isMesh || child.isLine) toRemove.push(child);
+    });
+    toRemove.forEach(c => scene.remove(c));
 
-    // Nettoyer labels
-    const labels = document.querySelectorAll('.label-bubble');
-    labels.forEach(el => el.remove());
-
-    // Dessiner Struts
-    const materialData = { width: state.width / 1000, thickness: state.thickness / 1000 }; // conversion mm en m
+    const materialData = { width: state.width / 1000, thickness: state.thickness / 1000 };
 
     geometryData.struts.forEach(strut => {
-        // Géométrie du montant
-        // Pour Good Karma : Section rectangulaire. Pour StarHub : Cylindre.
-        // Ici on utilise Cylindre pour simplicité visuelle ou Box.
-        
         const path = new THREE.Vector3().subVectors(strut.p2, strut.p1);
         const len = path.length();
         
+        // Géométrie
         let geometry;
         if (state.typology === 'starhub') {
             geometry = new THREE.CylinderGeometry(materialData.width/2, materialData.width/2, len, 8);
         } else {
-            // Good Karma : Box orientée
+            // Good Karma : Box
+            // Attention : BoxGeometry(width, height, depth)
+            // On veut longueur = Y (ThreeJS standard pour cylindre/alignement)
+            // Largeur (face visible) = state.width
+            // Epaisseur (profondeur) = state.thickness
             geometry = new THREE.BoxGeometry(materialData.thickness, len, materialData.width);
         }
 
         const material = new THREE.MeshLambertMaterial({ color: strut.color });
         const mesh = new THREE.Mesh(geometry, material);
 
-        // Positionnement et Orientation
+        // Position au milieu
         const center = new THREE.Vector3().addVectors(strut.p1, strut.p2).multiplyScalar(0.5);
         mesh.position.copy(center);
-        mesh.lookAt(strut.p2);
         
-        // Rotation correcte pour Good Karma (l'axe long du rectangle doit être tangent à la sphère ?)
-        // Three js lookAt aligne l'axe Z. Box est créée en Y. Donc rotation X 90.
-        mesh.rotateX(Math.PI / 2);
+        // Orientation
+        mesh.lookAt(strut.p2);
+        mesh.rotateX(Math.PI / 2); // Aligner Y de la box avec le vecteur lookAt
         
         scene.add(mesh);
-
-        // Label au centre (CSS2D)
-        const div = document.createElement('div');
-        div.className = 'label-bubble';
-        div.textContent = strut.type;
-        div.style.border = `2px solid #${strut.color.toString(16)}`;
-        const label = new CSS2DObject(div);
-        label.position.copy(center);
-        scene.add(label);
     });
-
-    // Mettre à jour l'interface des résultats
+    
     updateResultsUI();
+    updateSchemaUI();
 }
 
 // --- Interface Utilisateur ---
 
 function updateResultsUI() {
-    // Remplissage des champs
-    document.getElementById('res-hauteur').textContent = geometryData.stats.height.toFixed(3);
-    document.getElementById('res-rayon').textContent = geometryData.stats.radius.toFixed(3);
-    document.getElementById('res-faces').textContent = "?"; // A calculer via faces
-    document.getElementById('res-montants').textContent = geometryData.stats.countStruts;
-    document.getElementById('res-total-len').textContent = geometryData.stats.totalLength.toFixed(2);
+    const s = geometryData.stats;
+    document.getElementById('res-hauteur').textContent = s.height.toFixed(3);
+    document.getElementById('res-rayon').textContent = s.radiusSol.toFixed(3);
+    document.getElementById('res-sol').textContent = s.surfaceSol.toFixed(2);
+    document.getElementById('res-couv').textContent = s.surfaceCouv.toFixed(2);
+    
+    document.getElementById('res-faces').textContent = s.countFaces;
+    document.getElementById('res-montants').textContent = s.countStruts;
+    document.getElementById('res-total-len').textContent = s.totalLength.toFixed(2);
 
-    // Tableau des pièces
+    // Tableau Résumé
     const tableContainer = document.getElementById('strut-list-table');
     let html = `<table class="result-table">
         <thead><tr><th>Type</th><th>Qté</th><th>Longueur (m)</th><th>Couleur</th></tr></thead>
         <tbody>`;
     
-    geometryData.stats.types.forEach(type => {
+    geometryData.strutTypes.forEach(type => {
         html += `<tr>
             <td><b>${type.id}</b></td>
             <td>${type.count}</td>
@@ -380,24 +436,64 @@ function updateResultsUI() {
     tableContainer.innerHTML = html;
 }
 
+function updateSchemaUI() {
+    const container = document.getElementById('schema-content');
+    let html = `<div class="schema-list">`;
+    
+    geometryData.strutTypes.forEach(type => {
+        const colorHex = `#${type.color.toString(16).padStart(6, '0')}`;
+        html += `
+        <div class="schema-item">
+            <div class="schema-header" style="border-left: 5px solid ${colorHex}">
+                <h3>Type ${type.id} <span style="font-size:0.8em; font-weight:normal;">(x${type.count})</span></h3>
+            </div>
+            <div class="schema-details">
+                <div class="detail-row">
+                    <span>Longueur : <strong>${(type.length * 1000).toFixed(1)} mm</strong></span>
+                    <span>Largeur : ${state.width} mm</span>
+                    <span>Épaisseur : ${state.thickness} mm</span>
+                </div>
+                <div class="angles-row">
+                    <div class="angle-box">
+                        <span class="angle-label">Angle Coupe (Miter)</span>
+                        <span class="angle-value">${type.miterAngle.toFixed(1)}°</span>
+                    </div>
+                    <div class="angle-box">
+                        <span class="angle-label">Angle Lame (Bevel)</span>
+                        <span class="angle-value">${type.bevelAngle.toFixed(1)}°</span>
+                    </div>
+                </div>
+                <div class="strut-viz-container">
+                    <div class="strut-viz" style="background-color:${colorHex}; width: 100%;">
+                        <span class="strut-viz-text">${type.id}</span>
+                        <div class="cut-left" style="transform: skewX(-${type.miterAngle}deg)"></div>
+                        <div class="cut-right" style="transform: skewX(${type.miterAngle}deg)"></div>
+                    </div>
+                </div>
+            </div>
+        </div>`;
+    });
+    html += `</div>`;
+    container.innerHTML = html;
+}
+
 // Gestion des onglets
 document.querySelectorAll('.nav-btn[data-target]').forEach(btn => {
     btn.addEventListener('click', (e) => {
-        // Gestion active boutons
         document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
         e.target.classList.add('active');
-
         const targetId = e.target.getAttribute('data-target');
         
-        // Gestion Panel Paramètres (toggle sur mobile ou desktop)
         if(targetId === 'parametres') {
             document.querySelector('.sidebar').classList.toggle('active-panel');
+            // Force refresh 3D when coming back/toggling
+            setTimeout(() => {
+                onWindowResize();
+            }, 100);
         } else {
-            // Vue Centrale
             document.querySelectorAll('.view-panel').forEach(div => div.classList.add('hidden'));
             document.querySelectorAll('.view-panel').forEach(div => div.classList.remove('active'));
             
-            // Map boutons vers IDs de vues
             let viewId = 'view-3d';
             if (targetId === 'schema') viewId = 'view-schema';
             if (targetId === 'details') viewId = 'view-details';
@@ -416,13 +512,11 @@ document.querySelectorAll('.nav-btn[data-target]').forEach(btn => {
 const inputIds = ['frequence', 'rayon', 'fraction', 'classe', 'largeur', 'epaisseur'];
 inputIds.forEach(id => {
     document.getElementById(id).addEventListener('change', (e) => {
-        // Update State
         if(id === 'frequence') state.v = parseInt(e.target.value);
         if(id === 'rayon') state.radius = parseFloat(e.target.value);
         if(id === 'fraction') state.fraction = parseFloat(e.target.value);
         if(id === 'largeur') state.width = parseFloat(e.target.value);
         if(id === 'epaisseur') state.thickness = parseFloat(e.target.value);
-        
         recalculateAll();
     });
 });
@@ -434,22 +528,32 @@ document.querySelectorAll('input[name="typologie"]').forEach(radio => {
     });
 });
 
-// Export CSV
+// Export CSV corrigé (LibreOffice Friendly)
 document.getElementById('btn-export').addEventListener('click', () => {
+    // Séparateur ; pour compatibilité Excel FR / LibreOffice
+    const sep = ";";
     const rows = [
-        ["Type", "Quantite", "Longueur (m)", "Largeur (mm)", "Epaisseur (mm)"]
+        ["Type", "Quantite", "Longueur (mm)", "Miter (deg)", "Bevel (deg)", "Largeur (mm)", "Epaisseur (mm)"].join(sep)
     ];
-    geometryData.stats.types.forEach(t => {
-        rows.push([t.id, t.count, t.length.toFixed(4), state.width, state.thickness]);
+    
+    geometryData.strutTypes.forEach(t => {
+        // Remplacement point par virgule pour formats FR si nécessaire, ou standard point.
+        // On garde point pour compatibilité universelle, LibreOffice gère souvent les deux.
+        rows.push([
+            t.id, 
+            t.count, 
+            (t.length * 1000).toFixed(1), 
+            t.miterAngle.toFixed(1),
+            t.bevelAngle.toFixed(1),
+            state.width, 
+            state.thickness
+        ].join(sep));
     });
     
-    let csvContent = "data:text/csv;charset=utf-8," 
-        + rows.map(e => e.join(",")).join("\n");
-        
-    const encodedUri = encodeURI(csvContent);
+    let csvContent = "data:text/csv;charset=utf-8," + encodeURIComponent(rows.join("\n"));
     const link = document.createElement("a");
-    link.setAttribute("href", encodedUri);
-    link.setAttribute("download", "dome_cac.csv");
+    link.setAttribute("href", csvContent);
+    link.setAttribute("download", "dome_goodkarma_export.csv");
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -460,7 +564,6 @@ function recalculateAll() {
     drawDome();
 }
 
-// Init
 initThree();
 recalculateAll();
 
@@ -468,6 +571,5 @@ function animate() {
     requestAnimationFrame(animate);
     controls.update();
     renderer.render(scene, camera);
-    labelRenderer.render(scene, camera);
 }
 animate();

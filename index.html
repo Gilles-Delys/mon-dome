@@ -31,7 +31,11 @@
             
             <div class="control-group">
                 <label class="tooltip-trigger">Fréquence V :
-                    <span class="tooltip">C'est le paramètre le plus critique. Elle correspond au nombre de segments... (voir détails complets dans JS)</span>
+                    <span class="tooltip">
+                        C'est le paramètre le plus critique. Elle correspond au nombre de segments en lesquels chaque arête d'un triangle de base est divisée.<br>
+                        • 1V : Un simple icosaèdre.<br>
+                        • 2V, 3V... : Plus la fréquence est élevée, plus le dôme est sphérique.
+                    </span>
                 </label>
                 <select id="frequence">
                     <option value="1">1V</option>
@@ -45,14 +49,21 @@
 
             <div class="control-group">
                 <label class="tooltip-trigger">Rayon de la sphère, M :
-                    <span class="tooltip">La dimension souhaitée du dôme. Tous les calculs découlent de ce rayon...</span>
+                    <span class="tooltip">
+                        La dimension souhaitée du dôme. Tous les calculs de longueurs de montants découlent de ce rayon.<br>
+                        Formule : L = r × Facteur d'arête.
+                    </span>
                 </label>
                 <input type="number" id="rayon" value="2" step="0.1">
             </div>
 
             <div class="control-group">
                 <label class="tooltip-trigger">La Fraction de Sphère :
-                    <span class="tooltip">Un dôme n'est pas toujours une demi-sphère. 1/2, 3/8...</span>
+                    <span class="tooltip">
+                        Un dôme n'est pas toujours une demi-sphère. Selon la fréquence, on choisit une "coupe" :<br>
+                        • 1/2 (Hémisphère)<br>
+                        • 3/8, 5/8 (Plus ou moins haut)
+                    </span>
                 </label>
                 <select id="fraction">
                     <option value="0.5" selected>1/2 (Hémisphère)</option>
@@ -66,7 +77,10 @@
             <h2>Type de Symétrie (Classe)</h2>
             <div class="control-group">
                 <label class="tooltip-trigger">Classe :
-                    <span class="tooltip">Classe I : Icosaèdre standard. Classe II & III : Variantes...</span>
+                    <span class="tooltip">
+                        • Classe I : La plus commune (icosaèdre), offre la meilleure répartition des charges.<br>
+                        • Classe II & III : Variantes de répartition.
+                    </span>
                 </label>
                 <select id="classe">
                     <option value="1">I</option>
@@ -78,19 +92,30 @@
             <div class="radio-group">
                 <label class="tooltip-trigger">
                     <input type="radio" name="typologie" value="starhub"> Avec Connecteurs (Star-Hub)
-                    <span class="tooltip">Méthode précise pour grandes structures. Nécessite des connecteurs.</span>
+                    <span class="tooltip">
+                        Méthode précise pour les grandes structures.<br>
+                        • Avantage : Grande rigidité.<br>
+                        • Inconvénient : Coût des pièces.
+                    </span>
                 </label>
                 <label class="tooltip-trigger">
                     <input type="radio" name="typologie" value="goodkarma" checked> Sans Connecteurs (Good Karma)
-                    <span class="tooltip">Montants coupés avec angles spécifiques (Krushke). Économique et esthétique.</span>
+                    <span class="tooltip">
+                        Montants coupés avec angles spécifiques pour être vissés entre eux.<br>
+                        • Avantage : Esthétique épurée, économie.
+                    </span>
                 </label>
                 <label class="tooltip-trigger">
                     <input type="radio" name="typologie" value="panel"> Dôme Panel
-                    <span class="tooltip">Triangles pleins assemblés par les tranches.</span>
+                    <span class="tooltip">
+                        On construit des triangles pleins assemblés par les tranches.
+                    </span>
                 </label>
                 <label class="tooltip-trigger">
                     <input type="radio" name="typologie" value="hubstrut"> Hub-and-Strut
-                    <span class="tooltip">Type Buckminster Fuller classique.</span>
+                    <span class="tooltip">
+                        Format classique de chantier (type Buckminster Fuller).
+                    </span>
                 </label>
             </div>
 
@@ -110,35 +135,38 @@
             
             <div id="view-3d" class="view-panel active">
                 <div id="canvas-container"></div>
-                <div id="legend-overlay"></div>
             </div>
 
             <div id="view-schema" class="view-panel hidden">
                 <div class="schema-container">
-                    <h3>Schémas de Découpe</h3>
+                    <h2 style="color:#333; border-bottom: 2px solid #ddd; margin-bottom:20px;">Schémas de Découpe (Good Karma)</h2>
                     <div id="schema-content"></div>
                 </div>
             </div>
 
             <div id="view-details" class="view-panel hidden">
                 <h3>Détails Techniques</h3>
+                <p>Sélectionnez un élément dans la vue 3D ou consultez les schémas pour plus d'informations.</p>
                 <div id="details-content"></div>
             </div>
 
             <div id="view-resultats" class="view-panel hidden">
                 <h3>Résultats Globaux</h3>
+                
                 <div class="results-grid">
                     <div class="res-item"><strong>Hauteur au sol :</strong> <span id="res-hauteur">0</span> m</div>
                     <div class="res-item"><strong>Rayon au sol :</strong> <span id="res-rayon">0</span> m</div>
                     <div class="res-item"><strong>Surface au sol :</strong> <span id="res-sol">0</span> m²</div>
-                    <div class="res-item"><strong>Surface couverture :</strong> <span id="res-couv">0</span> m²</div>
+                    <div class="res-item"><strong>Surface de la couverture :</strong> <span id="res-couv">0</span> m²</div>
                 </div>
-                <h4>Quantités</h4>
+
+                <h4 style="margin-top: 20px; border-bottom: 1px solid #444;">Quantités</h4>
                 <div class="results-grid">
                     <div class="res-item"><strong>Faces :</strong> <span id="res-faces">0</span></div>
                     <div class="res-item"><strong>Montants :</strong> <span id="res-montants">0</span></div>
                     <div class="res-item"><strong>Dimensions Totales :</strong> <span id="res-total-len">0</span> m</div>
                 </div>
+
                 <div id="strut-list-table"></div>
             </div>
 

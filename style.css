@@ -1,209 +1,118 @@
-:root {
-    --bg-dark: #1e1e1e;
-    --panel-bg: #252526;
-    --text-main: #d4d4d4;
-    --accent: #007acc;
-    --accent-hover: #0098ff;
-    --border: #3e3e42;
-    --tooltip-bg: #333333;
+/* ... (Garder le CSS précédent, modifier/ajouter ce qui suit) ... */
+
+/* Mise à jour Vue 3D pour fond blanc */
+#view-3d {
+    background-color: white; /* Explicite */
 }
 
-body {
+/* Styles pour l'onglet Schéma */
+#view-schema {
+    background-color: white;
+    color: #333; /* Texte sombre sur fond blanc */
+    padding: 30px;
+}
+
+.schema-container {
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.schema-item {
+    background: #f8f9fa;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    padding: 20px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.schema-header {
+    margin-bottom: 15px;
+    padding-left: 15px;
+}
+
+.schema-header h3 {
     margin: 0;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    background-color: var(--bg-dark);
-    color: var(--text-main);
-    overflow: hidden;
-    height: 100vh;
+    color: #333;
+    font-size: 1.2rem;
+    border: none;
+    text-transform: none;
+}
+
+.schema-details {
     display: flex;
     flex-direction: column;
+    gap: 15px;
 }
 
-/* Menu Horizontal */
-.top-nav {
-    height: 50px;
-    background-color: #333337;
+.detail-row {
     display: flex;
-    align-items: center;
-    padding: 0 10px;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-    z-index: 10;
+    gap: 20px;
+    font-size: 0.95rem;
+    color: #555;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 10px;
 }
 
-.nav-btn {
-    background: none;
-    border: none;
-    color: var(--text-main);
-    padding: 0 20px;
-    height: 100%;
-    cursor: pointer;
-    font-size: 14px;
-    text-transform: uppercase;
-    transition: background 0.2s;
-}
-
-.nav-btn:hover { background-color: #3e3e42; }
-.nav-btn.active { border-bottom: 3px solid var(--accent); background-color: #2d2d30; }
-
-/* Layout Principal */
-.main-container {
+.angles-row {
     display: flex;
-    flex: 1;
-    overflow: hidden;
+    gap: 20px;
 }
 
-/* Sidebar Paramètres */
-.sidebar {
-    width: 320px;
-    background-color: var(--panel-bg);
-    border-right: 1px solid var(--border);
-    padding: 20px;
-    overflow-y: auto;
-    transition: transform 0.3s ease;
-    flex-shrink: 0;
-}
-
-h2 {
-    font-size: 14px;
-    text-transform: uppercase;
-    border-bottom: 1px solid var(--accent);
-    padding-bottom: 5px;
-    margin-top: 20px;
-    margin-bottom: 15px;
-}
-
-.control-group { margin-bottom: 15px; }
-
-label {
-    display: block;
-    margin-bottom: 5px;
-    font-size: 13px;
-    position: relative;
-    cursor: help;
-}
-
-input[type="number"], select {
-    width: 100%;
-    padding: 8px;
-    background-color: #3c3c3c;
-    border: 1px solid var(--border);
-    color: white;
-    border-radius: 4px;
-}
-
-.radio-group label {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    cursor: pointer;
-    margin-bottom: 8px;
-}
-
-/* Tooltips CSS purs */
-.tooltip-trigger .tooltip {
-    visibility: hidden;
-    width: 250px;
-    background-color: var(--tooltip-bg);
-    color: #fff;
-    text-align: left;
+.angle-box {
+    background: #e9ecef;
+    padding: 10px 15px;
     border-radius: 6px;
-    padding: 10px;
-    position: absolute;
-    z-index: 100;
-    top: 100%;
-    left: 0;
-    opacity: 0;
-    transition: opacity 0.3s;
-    box-shadow: 0 4px 8px rgba(0,0,0,0.3);
-    border: 1px solid #555;
-    font-weight: normal;
-    font-size: 12px;
-    pointer-events: none;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-width: 100px;
 }
 
-.tooltip-trigger:hover .tooltip {
-    visibility: visible;
-    opacity: 1;
+.angle-label {
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    color: #666;
+    margin-bottom: 5px;
 }
 
-/* Zone de Contenu */
-.content-area {
-    flex: 1;
+.angle-value {
+    font-size: 1.2rem;
+    font-weight: bold;
+    color: #222;
+}
+
+/* Visualisation CSS de la planche */
+.strut-viz-container {
+    margin-top: 10px;
+    padding: 10px 0;
+}
+
+.strut-viz {
+    height: 40px;
     position: relative;
-    background: radial-gradient(circle, #2d2d30 0%, #1e1e1e 100%);
-}
-
-.view-panel {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    overflow-y: auto;
-    padding: 20px;
-    box-sizing: border-box;
-    display: none;
-}
-
-.view-panel.active { display: block; }
-.view-panel.hidden { display: none; }
-
-#canvas-container {
-    width: 100%;
-    height: 100%;
-}
-
-/* Labels 3D */
-.label-bubble {
-    background: white;
-    color: black;
-    border-radius: 50%;
-    width: 20px;
-    height: 20px;
+    border-radius: 2px;
     display: flex;
     justify-content: center;
     align-items: center;
+    overflow: hidden; /* Pour couper proprement */
+}
+
+.strut-viz-text {
+    color: white;
     font-weight: bold;
-    font-size: 10px;
-    box-shadow: 0 0 5px rgba(0,0,0,0.5);
+    text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+    z-index: 2;
 }
 
-/* Résultats & Schémas */
-.results-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-    gap: 15px;
-    margin-bottom: 20px;
+/* Simulation des coupes (visuel approximatif) */
+.cut-left, .cut-right {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 20px;
+    background-color: white; /* Couleur du fond pour "couper" */
+    z-index: 1;
 }
-
-.res-item {
-    background: #333;
-    padding: 15px;
-    border-radius: 4px;
-    border-left: 3px solid var(--accent);
-}
-
-table.result-table {
-    width: 100%;
-    border-collapse: collapse;
-    margin-top: 20px;
-}
-table.result-table th, table.result-table td {
-    border: 1px solid var(--border);
-    padding: 8px;
-    text-align: left;
-}
-table.result-table th { background-color: #333; }
-
-/* Responsive */
-@media (max-width: 768px) {
-    .main-container { flex-direction: column; }
-    .sidebar { 
-        width: 100%; 
-        height: auto; 
-        max-height: 30vh;
-        border-right: none;
-        border-bottom: 1px solid var(--border);
-    }
-    .top-nav { overflow-x: auto; }
-}
+.cut-left { left: -10px; }
+.cut-right { right: -10px; }
